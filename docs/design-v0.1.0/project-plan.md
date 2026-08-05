@@ -1,0 +1,111 @@
+# wolong — project plan
+
+> **wolong**: an LFE/OTP application that supervises and exposes a typed API
+> for the PANDA (pandaPI) HTN planning toolchain, with OS-process management
+> via [erlexec](https://github.com/saleyn/erlexec). *(Named for the Wolong
+> National Nature Reserve — the sanctuary where pandas live under
+> professional care — and for 卧龙, "Crouching Dragon," the sobriquet of Zhuge
+> Liang, the archetypal strategist. A supervision tree for a planning organ,
+> in one word.)*
+>
+> Plan-of-record at project scale, per the collaboration framework's
+> `PROJECT-MANAGEMENT.md` (v2.1). Design substrate: **"Composite Cognition —
+> Supervision-Tree Architecture"** (the planning organ's requirements),
+> **"Planner Toolchain Selection — HDDL, pandaPI, and the JSON Bridge"** (the
+> toolchain decision record and gate sequence), and the **PANDA Runbook**
+> (verified gate mechanics, exit codes, and the `Status:`-line trap). This
+> plan carries the OTP architecture at roadmap level; per-arc plans carry the
+> process-level design when each arc is near.
+
+## 1. Definition of done, and boundaries
+
+**Done means:** a rebar3/LFE OTP application, published to hex.pm as
+`wolong`, that a BEAM system can add as a dependency and use to run the full
+pandaPI gate sequence — parse → ground → solve → convert → **verify** — as
+supervised external OS processes, returning **validated-plan-or-unsolvable as
+an actual return type**:
+
+- `(wolong:plan domain problem opts)` → `#(ok plan)` (with the primitive
+  action sequence *and* the decomposition tree, plus provenance) |
+  `#(unsolvable proof-metadata)` | `#(error #(gate reason detail))`
+- `(wolong:verify domain problem plan opts)` → `#(ok verified)` |
+  `#(invalid detail)` | `#(error ...)`
+- `(wolong:validate domain problem)` → `#(ok properties)` | `#(error ...)`
+
+Every external process runs under erlexec with a per-gate timeout and kill
+escalation — a hung `pandaPIengine` search dies cleanly and reports as a
+typed timeout, never a zombie. Every gate failure crashes that dispatch
+loudly with a typed error naming the gate — never a silent partial artifact
+(the toolchain note's §8 gate contract, promoted to API semantics).
+
+**The one behavior this project exists to guarantee:** the confident-plan-
+for-unsolvable-problem failure mode is structurally impossible at this API.
+`Status: Proven unsolvable` (engine exit 0 — the trap the runbook documents)
+maps to `#(unsolvable ...)`, and no plan is returned unverified.
+
+**Explicit non-goals (0.1.0):**
+
+- **No HDDL generation.** wolong consumes `.hddl` files (or binaries/strings
+  of HDDL); the JSON bridge, schema, structural linter, and Lykn serializer
+  are the bridge project's scope. wolong is the organ's process shell, not
+  its translator.
+- **No CCDP bus integration.** The API is shaped so a CCDP capability wrapper
+  can sit on top (typed results carry provenance for exactly that reason),
+  but registry, JSON-RPC, and content types are out of scope here.
+- **No Aries, no SHOP3** — pandaPI only, per the toolchain decision record.
+  (The API deliberately avoids pandaPI-isms where cheap, so a second planner
+  slots in behind the same functions later.)
+- **No planner pooling / distribution** beyond one supervised dispatch per
+  request.
+- **No building of pandaPI from source.** wolong locates binaries via
+  configuration; provisioning them from chengdu releases is arc03's scope.
+
+**Position in the composite-cognition architecture:** wolong is the planning
+organ's process boundary — the Erlang-port-program shape the supervision-tree
+note specifies, made concrete. Upstream of it sits the (future) JSON bridge;
+downstream sit the pandaPI executables that chengdu builds and releases.
+
+## 2. Arc roadmap
+
+| Arc | Slug | Capability (one line) | Depends on |
+|-----|------|----------------------|------------|
+| arc01 | `exec-substrate` | wolong can run one supervised pandaPI process via erlexec and return a typed result — timeouts, kill escalation, exit-code mapping proven. | — |
+| arc02 | `gate-pipeline` | The full five-gate dispatch as a supervised state machine; `plan`/`verify`/`validate` API; validated-plan-or-unsolvable end to end. | arc01 |
+| arc03 | `provisioning` | Binaries fetched and checksum-verified from chengdu releases; config surface; hex.pm release readiness. | arc02; chengdu arc02 |
+
+Load-bearing note: arc01 deliberately proves the risky substrate (erlexec
+lifecycle, LFE↔erlexec ergonomics, exit-code fidelity) on the *simplest*
+component (parser validation) before arc02 builds the pipeline on it. arc03
+is where wolong and chengdu compose — its checksum-verification row is the
+consumer side of chengdu's provenance manifest (chengdu ledger row P4).
+
+## 3. Current status
+
+- **arc01 — active.** `arc01-exec-substrate/arc-plan.md` written 2026-08-05.
+- **arc02 — named only**, per *plan late, plan deep*. The gen_statem gate
+  design sketch lives in arc01's "leaves for arc02" so it is not lost, but
+  detailed planning waits for arc01's bubble-ups.
+- **arc03 — named only.** Depends on chengdu arc02 existing; sequencing risk
+  recorded: if chengdu releases lag, arc03 falls back to documented-manual
+  binary placement, and the fetch step becomes a fast follow.
+
+## 4. Project ledger
+
+Composition rows verifying the DoD; open here, close (per-row walk) in the
+project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
+
+| Row | Criterion | Target strength |
+|-----|-----------|-----------------|
+| W1 | On a clean machine with chengdu-released binaries, `(wolong:plan ...)` on the runbook's minimal pair returns `#(ok plan)` whose action sequence verifies, and the same call on the runbook's circular-precondition variant returns `#(unsolvable ...)` — the two return types demonstrated side by side. | reproduced |
+| W2 | A dispatch whose engine gate exceeds its timeout is killed (no surviving OS process) and returns a typed timeout error naming the gate. | reproduced |
+| W3 | Every gate failure mode from the runbook's exit-code tables (parser 0/2/255; verifier 0/1/2; engine `Status:` line) maps to a distinct typed result — no failure collapses into a generic error. | reproduced via test suite |
+| W4 | The application's supervision tree restarts a crashed dispatch worker without taking down the app, and concurrent dispatches are isolated (one crash, others complete). | reproduced |
+| W5 | Published on hex.pm as `wolong`; a fresh rebar3 project adds it as a dep and reaches W1 following only the README. | reproduced |
+
+## 5. Version history
+
+- **v1.0 — 2026-08-05.** Initial roadmap. Sources: the PANDA toolchain
+  working session (verified gate mechanics), the toolchain-selection note's
+  §8 gate contract, and the operator's erlexec decision (chosen over raw OTP
+  ports for kill/timeout semantics, over erlport which is a Python/Ruby
+  bridge). No child bubble-ups yet.
