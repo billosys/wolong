@@ -23,3 +23,17 @@ consumes).
 - Process middleware is erlexec (operator decision 2026-08-05, chosen for
   kill/timeout semantics over raw ports; erlport was a misremembering —
   it is a Python/Ruby bridge and is not used here).
+
+## Workflow
+
+- **Direct-to-main.** No PR ceremony; the quality gate is the ledger +
+  CDC verification, not merge review (same operator override as the
+  sibling `chengdu` project, applied from the first push — recorded at
+  repo creation, slice01 `app-skeleton`).
+- **Repo home**: `billosys` org, public, default branch `main` — stated
+  explicitly because the one process defect of `chengdu` was a repo born
+  in the wrong org.
+- **Pins-not-floats**: dependency versions, OTP versions in CI, and
+  GitHub Action majors are pinned exactly; version choices are surveyed
+  live at the point they're pinned, not recalled from memory, and the
+  rationale is recorded in the relevant slice's ledger.

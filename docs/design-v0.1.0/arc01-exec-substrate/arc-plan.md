@@ -54,9 +54,11 @@ arc02 commits to it.
 
 ## 4. Open questions (named, owned by slices)
 
-- **OQ1 (slice01):** erlexec from LFE — erlexec's API is Erlang-friendly but
-  its option lists are idiosyncratic; verify early that LFE call ergonomics
-  don't warrant a thin macro layer. Decide by end of slice01.
+- **OQ1 (slice01): RESOLVED — direct calls, no wrapper.** erlexec from LFE —
+  erlexec's API is Erlang-friendly but its option lists are idiosyncratic;
+  verify early that LFE call ergonomics don't warrant a thin macro layer.
+  Decide by end of slice01. *(Was: open. Resolved 2026-08-06 by slice01 —
+  see Version History.)*
 - **OQ2 (slice02):** stdout capture strategy for large outputs — engine
   output on hard instances can be large; stream-to-file vs. accumulate-in-
   memory, and where the truncation policy lives. Default: accumulate with a
@@ -76,6 +78,23 @@ arc02 commits to it.
 
 ## 6. Version history
 
+- **v1.1 — 2026-08-06 (surfaced by slice01).** OQ1 resolved: **direct
+  `exec:run/2` calls, no thin wrapper macro.** Evidence: `wolong`'s erlexec
+  probe (`test/unit-wolong-exec-probe-tests.lfe`) calls
+  `(exec:run "true" '(sync stdout stderr))` and the equivalent
+  nonexistent-command case directly from LFE — plain positional option
+  lists of atoms and 2-tuple `#(ok ...)`/`#(error ...)` returns read and
+  write cleanly as-is; no idiom in the option-list or return shape fought
+  LFE's syntax. (Separately, slice01 found that `ltest`'s `is-match` macro
+  does not perform genuine wildcard pattern matching — it degrades to
+  structural equality against the literal `assertMatch` guard term, so a
+  bare `_` in a guard compares as the atom `_`, not a wildcard. That is an
+  `ltest` test-macro limitation, unrelated to erlexec ergonomics, and does
+  not change the OQ1 verdict; slice01's tests use `element/1` equality
+  checks instead.) The generic `wolong_exec` wrapper module planned for
+  slice02 is still built — but as the domain contract (timeouts, kill
+  escalation, typed results), not as an ergonomics workaround for erlexec's
+  raw API.
 - **v1.0 — 2026-08-05.** Initial slice breakdown. Sources: project plan v1.0;
   erlexec decision from plan review; runbook §5 exit-code table as the
   slice03 contract. No slice bubble-ups yet.
