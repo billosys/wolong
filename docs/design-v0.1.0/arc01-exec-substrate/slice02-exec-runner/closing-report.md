@@ -11,12 +11,14 @@ Rows opened: 9. Rows addressed: 9. Done: 8. Deferred: 1. No-op: 0.
 Silent drops: 0.
 
 - **R-1 — Slice01 F-1 OTP pin disposition.** Done. Implementation commit
-  `25ff21af8f39b10d415d11d02dc12dd62e42c261` updates
-  `.github/workflows/build.yml` from OTP `28.1.1` to `28.5.0.4`. Live survey
-  on 2026-08-13 found Erlang's download index listing `OTP-28.5.0.4` dated
-  2026-07-27, and Erlang's OTP versions tree listing `maint-28` at
-  `OTP 28.5.0.4`. Local suite evidence: `rebar3 as test eunit` -> 19 tests,
-  0 failures. Remote CI execution under that pin is routed to R-8.
+  `25ff21af8f39b10d415d11d02dc12dd62e42c261` moved CI from OTP `28.1.1` to
+  `28.5.0.4`; iteration 01 corrects the branch-head pin to `28.5.0.5`. Live
+  survey on 2026-08-14 found Erlang's download index listing
+  `OTP-28.5.0.5.README` dated `04-Aug-2026 09:59`, after `28.5.0.4`, and
+  Erlang's OTP versions tree listing `maint-28` at `OTP 28.5.0.5`, with
+  `OTP 28.5.0.4` one row below it. Local suite evidence:
+  `rebar3 as test eunit` -> 19 tests, 0 failures. Fresh remote CI execution
+  under that pin is routed to R-8.
 - **R-2 — Owned typed runner contract.** Done. `src/wolong-exec.lfe` exports
   `(run 3)` and returns only `#(ok Result)`, `#(timeout Result)`, or
   `#(error #(exec Reason Detail))`. `rebar3 compile` exits 0. The result maps
@@ -53,10 +55,9 @@ Silent drops: 0.
   tamper changed the nonzero-exit expectation from 7 to 8, and
   `rebar3 as test eunit` exited 1 with 19 tests, 1 failure; reverting the
   tamper produced 19 tests, 0 failures. The workflow includes the suite on
-  `ubuntu-22.04` and `macos-15` at OTP `28.5.0.4`. Remote CI green evidence
-  is not claimed because this local session did not push to GitHub. Re-entry:
-  push the closing commit to `main`, wait for Actions, and record the green
-  run URL for both matrix legs.
+  `ubuntu-22.04` and `macos-15` at OTP `28.5.0.5`. Remote CI green evidence
+  for the corrected pin is pending. Re-entry: push the correction commit to
+  `main`, wait for Actions, and record the green run URL for both matrix legs.
 - **R-9 — scope fence.** Done. Scope grep over `src test` finds no
   `pandaPIparser`, `pandaPIgrounder`, `pandaPIengine`, `defun plan`,
   `defun verify`, `gen_statem`, or `wolong-binaries`. The diff adds only the
@@ -106,9 +107,9 @@ later pandaPI gates do not inherit child-process cleanup ambiguity.
 **3. Scope-as-specified vs. scope-as-delivered.** Delivered: generic runner,
 typed results, separated stdout/stderr, nonzero completed exits, argv safety,
 timeout results, TERM-resistant cleanup evidence, output caps, post-failure
-recovery, OTP 28 branch-head CI pin disposition, local gates, and tamper proof.
+recovery, corrected OTP 28 branch-head CI pin disposition, local gates, and
+tamper proof.
 Deferred: optional `cwd`/`env` runner options, stream-to-file output capture,
 and remote CI green-run evidence. Stayed out: pandaPI invocation, binary
 locator, top-level `wolong:validate`/`plan`/`verify`, gate pipeline,
 `gen_statem`, and publishing.
-
