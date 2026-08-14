@@ -37,3 +37,7 @@ consumes).
   GitHub Action majors are pinned exactly; version choices are surveyed
   live at the point they're pinned, not recalled from memory, and the
   rationale is recorded in the relevant slice's ledger.
+- **Commit footer convention (operator override, 2026-08-07):** every future
+  assistant-authored commit message includes these trailers:
+  `Co-authored-by: Codex <noreply@openai.com>` and
+  `Co-authored-by: Billo AI <ai-engineering@billo.systems>`.
