@@ -81,10 +81,15 @@ consumer side of chengdu's provenance manifest (chengdu ledger row P4).
 
 ## 3. Current status
 
-- **arc01 — active.** `arc01-exec-substrate/arc-plan.md` written 2026-08-05.
-- **arc02 — named only**, per *plan late, plan deep*. The gen_statem gate
-  design sketch lives in arc01's "leaves for arc02" so it is not lost, but
-  detailed planning waits for arc01's bubble-ups.
+- **arc01 — closed 2026-08-14.** `arc01-exec-substrate/closing-report.md`
+  closes the substrate arc with local gates, real `pandapi-parser` evidence,
+  and CI fixture coverage.
+- **arc02 — next.** Still named only, per *plan late, plan deep*. The
+  `gen_statem` gate design sketch lives in arc01's "leaves for arc02" so it
+  is not lost, but detailed planning now starts from arc01's bubble-ups:
+  current managed `PANDAPI_STATUS` classification, parser invalidity as
+  `invalid-kind=undistinguished`, app-env-only binary lookup, and stream-to-
+  file capture deferred until engine scale demands it.
 - **arc03 — named only.** Depends on chengdu arc02 existing; sequencing risk
   recorded: if chengdu releases lag, arc03 falls back to documented-manual
   binary placement, and the fetch step becomes a fast follow.
@@ -98,12 +103,21 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 |-----|-----------|-----------------|
 | W1 | On a clean machine with chengdu-released binaries, `(wolong:plan ...)` on the runbook's minimal pair returns `#(ok plan)` whose action sequence verifies, and the same call on the runbook's circular-precondition variant returns `#(unsolvable ...)` — the two return types demonstrated side by side. | reproduced |
 | W2 | A dispatch whose engine gate exceeds its timeout is killed (no surviving OS process) and returns a typed timeout error naming the gate. | reproduced |
-| W3 | Every gate failure mode from the runbook's exit-code tables (parser 0/2/255; verifier 0/1/2; engine `Status:` line) maps to a distinct typed result — no failure collapses into a generic error. | reproduced via test suite |
+| W3 | Every gate failure mode from the current managed-process contracts maps to a typed result from exit code plus final machine status (`PANDAPI_STATUS` where available, including the engine no-plan status) — no failure collapses into a generic error or diagnostic-prose scrape. | reproduced via test suite |
 | W4 | The application's supervision tree restarts a crashed dispatch worker without taking down the app, and concurrent dispatches are isolated (one crash, others complete). | reproduced |
 | W5 | Published on hex.pm as `wolong`; a fresh rebar3 project adds it as a dep and reaches W1 following only the README. | reproduced |
 
 ## 5. Version history
 
+- **v1.1 — 2026-08-14 (surfaced by arc01 close).** Arc01 closes the
+  supervised-process substrate and moves project status to arc02 next. The
+  project plan now follows the current Chengdu 0.3.0 pre-release
+  `pandapi-*` managed-process contract rather than the older parser
+  `0/2/255` wording. Parser invalid-HDDL cases are typed but currently
+  `invalid-kind=undistinguished`, because `pandapi-parser` emits
+  `status=input_invalid`, `exit_code=22` for both broken syntax and broken
+  reference/undeclared predicate without a stable machine subtype. CI uses a
+  fixture executable until arc03 provisions real Chengdu release binaries.
 - **v1.0 — 2026-08-05.** Initial roadmap. Sources: the PANDA toolchain
   working session (verified gate mechanics), the toolchain-selection note's
   §8 gate contract, and the operator's erlexec decision (chosen over raw OTP

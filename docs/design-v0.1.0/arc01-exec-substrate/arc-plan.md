@@ -80,7 +80,7 @@ arc02 commits to it.
 
 | Row | Criterion | Target strength |
 |-----|-----------|-----------------|
-| A1 | `rebar3 lfe compile` + app start/stop clean on a machine with configured binaries; test suite green. | reproduced |
+| A1 | `rebar3 compile` + app start/stop clean on a machine with configured binaries; test suite green. | reproduced |
 | A2 | `wolong_exec` demonstrably kills a deliberately-hanging process at its timeout, returns a typed timeout, and leaves no OS process behind (checked via OS process table in the test). | reproduced |
 | A3 | `(wolong:validate ...)` returns the correct typed result for: valid pair, missing file, syntax-invalid HDDL, and broken-reference/undeclared-predicate HDDL. Current `pandapi-parser` classifies both invalid-HDDL cases as `input_invalid`/22 with no machine subtype, so wolong records `invalid-kind=undistinguished`. | reproduced via test suite |
 | A4 | No dispatch path returns an untyped or stringly error; every error term names its gate/reason (attested by review of the public API surface). | attested |
