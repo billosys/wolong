@@ -1,0 +1,2 @@
+(define (problem wolong-engine-invalid-problem)
+  (:domain wolong-engine-invalid))

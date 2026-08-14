@@ -14,6 +14,7 @@
    (status_parser_unknown_field_preserved 1)
    (mapper_covers_managed_status_vocabulary 1)
    (mapper_exec_error_is_typed 1)
+   (mapper_status_exit_code_mismatch_is_typed 1)
    (engine_domain_no_plan_success_shape 1)
    (engine_domain_no_plan_distinct_from_failures 1)
    (supervised_parse_ground_solve_fixture 1)))
@@ -30,6 +31,7 @@
     status_parser_unknown_field_preserved
     mapper_covers_managed_status_vocabulary
     mapper_exec_error_is_typed
+    mapper_status_exit_code_mismatch_is_typed
     engine_domain_no_plan_success_shape
     engine_domain_no_plan_distinct_from_failures
     supervised_parse_ground_solve_fixture))
@@ -157,6 +159,23 @@
     (equal 'error (element 1 result))
     (equal 'exec (element 1 reason))
     (equal 'start-failed (element 2 reason))))
+
+(defun mapper_status_exit_code_mismatch_is_typed (_config)
+  (let* ((output-path (temp-path "wolong-status-mismatch.htn"))
+         (result (wolong-gate:classify
+                  'parser
+                  (tuple 'ok
+                         (completed-result
+                          0
+                          #b("PANDAPI_STATUS\tstatus=ok\tcomponent=parser\texit_code=22\tartifact=file\n")))
+                  output-path))
+         (reason (element 2 result))
+         (detail (element 2 reason))
+         (status (map-get detail 'status-fields)))
+    (equal 'error (element 1 result))
+    (equal 'status-exit-mismatch (element 1 reason))
+    (equal 0 (map-get detail 'exit-status))
+    (equal 22 (map-get status 'exit-code))))
 
 (defun engine_domain_no_plan_success_shape (_config)
   (let* ((output-path (temp-path "wolong-engine-no-plan.plan"))

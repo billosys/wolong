@@ -23,6 +23,8 @@ usage_error() {
 
 output="$4"
 input="$5"
+output_dir=$(dirname "$output")
+: >"$output_dir/engine.invoked"
 
 if [ ! -r "$input" ]; then
     status input_unavailable 20 caller_error absent path_role=input operation=open

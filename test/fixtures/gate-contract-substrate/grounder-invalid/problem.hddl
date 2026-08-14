@@ -1,0 +1,2 @@
+(define (problem wolong-grounder-invalid-problem)
+  (:domain wolong-grounder-invalid))

@@ -24,6 +24,8 @@ usage_error() {
 output="$4"
 domain="$5"
 problem="$6"
+output_dir=$(dirname "$output")
+: >"$output_dir/parser.invoked"
 
 if [ ! -r "$domain" ]; then
     status input_unavailable 20 caller_error absent path_role=domain operation=open
@@ -35,7 +37,17 @@ if [ ! -r "$problem" ]; then
     exit 20
 fi
 
-if grep -q 'wolong-unsolvable' "$domain"; then
+if grep -q 'force-grounder-invalid' "$domain"; then
+    printf 'fixture parser artifact\nmalformed\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-engine-invalid' "$domain"; then
+    printf 'fixture parser artifact\nengine-invalid\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'wolong-unsolvable' "$domain"; then
     printf 'fixture parser artifact\nunsolvable\n' >"$output" || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21

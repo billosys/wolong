@@ -6,6 +6,9 @@
    (run-parser 4)
    (run-grounder 3)
    (run-engine 3)
+   (run-parser-to 5)
+   (run-grounder-to 4)
+   (run-engine-to 4)
    (classify 3)))
 
 ;;; ----------------
@@ -29,6 +32,24 @@
             (engine-argv-fn sas-path)
             "plan"
             config))
+
+(defun run-parser-to (parser output-path domain-path problem-path config)
+  (run-gate-to 'parser parser
+               (parser-argv output-path domain-path problem-path)
+               output-path
+               config))
+
+(defun run-grounder-to (grounder output-path htn-path config)
+  (run-gate-to 'grounder grounder
+               (grounder-argv output-path htn-path)
+               output-path
+               config))
+
+(defun run-engine-to (engine output-path sas-path config)
+  (run-gate-to 'engine engine
+               (engine-argv output-path sas-path)
+               output-path
+               config))
 
 (defun classify (gate runner-result output-path)
   (case runner-result
@@ -95,6 +116,16 @@
        `#(error #(workdir-unavailable
                   ,(map 'gate gate 'path output-path 'reason reason)))))))
 
+(defun run-gate-to (gate binary argv output-path config)
+  (case (filelib:ensure_dir output-path)
+    ('ok
+     (classify gate
+               (wolong-exec:run binary argv (runner-opts gate config))
+               output-path))
+    (`#(error ,reason)
+     `#(error #(workdir-unavailable
+                ,(map 'gate gate 'path output-path 'reason reason))))))
+
 (defun runner-opts (gate config)
   (let* ((gate-timeouts (maps:get 'gate-timeouts config))
          (timeout-ms (maps:get (timeout-key gate) gate-timeouts)))
@@ -132,6 +163,14 @@
                    ,(result-detail gate result (map) output-path))))))))
 
 (defun classify-status (gate exit-status fields result output-path)
+  (case (exit-code-matches? exit-status fields)
+    ('true
+     (classify-matched-status gate exit-status fields result output-path))
+    ('false
+     `#(error #(status-exit-mismatch
+                ,(result-detail gate result fields output-path))))))
+
+(defun classify-matched-status (gate exit-status fields result output-path)
   (case (tuple exit-status (maps:get 'status fields 'undefined))
     (`#(0 #b("ok"))
      (classify-ok gate result fields output-path))
@@ -166,6 +205,13 @@
     (`#(60 #b("internal_error"))
      `#(error #(internal-error ,(result-detail gate result fields output-path))))
     (_ `#(error #(unmapped-status ,(result-detail gate result fields output-path))))))
+
+(defun exit-code-matches? (exit-status fields)
+  (case (maps:get 'exit-code fields 'undefined)
+    ('undefined 'true)
+    (status-exit-code
+     (andalso (is_integer status-exit-code)
+              (=:= exit-status status-exit-code)))))
 
 (defun classify-ok (gate result fields output-path)
   (let ((detail (result-detail gate result fields output-path)))

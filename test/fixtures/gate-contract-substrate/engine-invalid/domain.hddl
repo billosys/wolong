@@ -1,0 +1,3 @@
+(define (domain wolong-engine-invalid)
+  ;; force-engine-invalid
+)

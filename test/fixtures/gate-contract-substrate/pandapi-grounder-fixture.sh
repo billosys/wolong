@@ -23,6 +23,8 @@ usage_error() {
 
 output="$4"
 input="$5"
+output_dir=$(dirname "$output")
+: >"$output_dir/grounder.invoked"
 
 if [ ! -r "$input" ]; then
     status input_unavailable 20 caller_error absent path_role=input operation=open
@@ -34,7 +36,12 @@ if grep -q 'malformed' "$input"; then
     exit 22
 fi
 
-if grep -q 'unsolvable' "$input"; then
+if grep -q 'engine-invalid' "$input"; then
+    printf 'fixture grounder artifact\nmalformed\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'unsolvable' "$input"; then
     printf 'fixture grounder artifact\nunsolvable\n' >"$output" || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21

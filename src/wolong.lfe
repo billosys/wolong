@@ -39,6 +39,8 @@
    `#(error #(parser exec ,reason ,detail)))
   ((`#(error #(missing-status ,reason ,detail)))
    `#(error #(parser status-missing ,reason ,detail)))
+  ((`#(error #(status-exit-mismatch ,detail)))
+   `#(error #(parser status-exit-mismatch ,detail)))
   ((`#(error #(unmapped-status ,detail)))
    `#(error #(parser unmapped-status ,detail)))
   ((err) err))
