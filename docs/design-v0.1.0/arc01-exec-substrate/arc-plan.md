@@ -70,9 +70,11 @@ arc02 commits to it.
   accumulation with truncation metadata via `output-limit-bytes`; stream-to-
   file remains deferred to arc02 when the engine gate is real. *(Was: open.
   Resolved 2026-08-14 by slice02 — see Version History.)*
-- **OQ3 (slice03):** binary discovery precedence — app env only, or app env
-  → `WOLONG_PANDA_PATH` env var → PATH probe. Default: app env only for
-  0.1.0 (explicit beats convenient); record any operator pushback.
+- **OQ3 (slice03): RESOLVED — app env only for 0.1.0.** Binary discovery
+  precedence — app env only, or app env → `WOLONG_PANDA_PATH` env var → PATH
+  probe. Slice03 implemented explicit app-env lookup only; no PATH or env-var
+  fallback was added. *(Was: open. Resolved 2026-08-14 by slice03 — see
+  Version History.)*
 
 ## 5. Arc ledger
 
@@ -80,11 +82,22 @@ arc02 commits to it.
 |-----|-----------|-----------------|
 | A1 | `rebar3 lfe compile` + app start/stop clean on a machine with configured binaries; test suite green. | reproduced |
 | A2 | `wolong_exec` demonstrably kills a deliberately-hanging process at its timeout, returns a typed timeout, and leaves no OS process behind (checked via OS process table in the test). | reproduced |
-| A3 | `(wolong:validate ...)` returns the correct distinct typed result for: valid pair, missing file, syntax error, undeclared predicate or broken reference — classified from the current `pandapi-parser` exit code and final `PANDAPI_STATUS`. | reproduced via test suite |
+| A3 | `(wolong:validate ...)` returns the correct typed result for: valid pair, missing file, syntax-invalid HDDL, and broken-reference/undeclared-predicate HDDL. Current `pandapi-parser` classifies both invalid-HDDL cases as `input_invalid`/22 with no machine subtype, so wolong records `invalid-kind=undistinguished`. | reproduced via test suite |
 | A4 | No dispatch path returns an untyped or stringly error; every error term names its gate/reason (attested by review of the public API surface). | attested |
 
 ## 6. Version history
 
+- **v1.4 — 2026-08-14 (surfaced by slice03).** OQ3 resolved:
+  **app env only for 0.1.0.** `wolong-binaries:parser/0` resolves only the
+  configured `parser` entry from the validated app environment and performs
+  existence/executable checks before invoking the parser; no PATH or
+  `WOLONG_PANDA_PATH` fallback was added. Slice03 also corrected A3's
+  granularity: current `../chengdu/bin/pandapi-parser` exposes both broken
+  syntax and broken reference/undeclared predicate as `status=input_invalid`,
+  `exit_code=22`, with no machine-readable subtype even under `--verbose`.
+  Wolong therefore returns typed `invalid-hddl` with
+  `invalid-kind=undistinguished`; arc02 must not promise syntax-vs-semantic
+  parser subtypes unless Chengdu adds a stable status field for them.
 - **v1.3 — 2026-08-14 (operator correction before slice03 implementation).**
   The parser integration target is the current Chengdu pre-release binary
   name `pandapi-parser`, supplied from the sibling checkout at
