@@ -63,7 +63,7 @@ managed-process binary.
 - `wolong-exec:run/3` typed runner with argv execution, timeout cleanup,
   output caps, and recovery after failure.
 - `wolong-config:validate/0` and app-env-only binary/config lookup.
-- `wolong-binaries:resolve/1`, currently parser-proven only.
+- `wolong-binaries:resolve/1`, now parser/grounder/engine-proven by slice01.
 - `wolong:validate/2`, parser-only public validation.
 - Parser fixture corpus and CT pattern for supervised-process integration.
 
@@ -98,13 +98,19 @@ managed-process binary.
   supported verifier if one exists, or update project docs to defer
   `wolong:verify` with a concrete re-entry condition. Do not add a public
   function that pretends verification happened.
-- **OQ2 (slice01): shared status parser shape.** Arc01's `PANDAPI_STATUS`
-  parser lives inside `src/wolong.lfe`. Decide whether to extract it into
-  `wolong-status` or a gate module. The result must avoid three parser copies.
-- **OQ3 (slice01): CI fixture strategy for grounder/engine.** Decide how much
-  of the current Chengdu managed contract the checked-in fixture executables
-  must emulate for remote CI. They should prove Wolong's invocation and mapping
-  without claiming to prove Chengdu search behavior.
+- **OQ2 (slice01): RESOLVED — shared parser plus gate mapper.** Arc01's
+  `PANDAPI_STATUS` parser was extracted from `src/wolong.lfe` into
+  `src/wolong-status.lfe`, and shared gate invocation/classification landed in
+  `src/wolong-gate.lfe`. The result avoids three parser copies and keeps
+  `wolong:validate/2` as a compatibility adapter over the shared substrate.
+  *(Was: open. Resolved 2026-08-14 by slice01 — see Version History.)*
+- **OQ3 (slice01): RESOLVED — strict fixtures plus local real-binary survey.**
+  Remote CI uses checked-in parser/grounder/engine fixture executables that
+  prove Wolong's supervised argv shape, artifact handling, stdout ownership,
+  status parsing, and engine no-plan mapping. Real Chengdu binary behavior is
+  surveyed locally and recorded separately; CI does not claim to run sibling
+  Chengdu binaries. *(Was: open. Resolved 2026-08-14 by slice01 — see Version
+  History.)*
 - **OQ4 (slice02): stream-to-file capture.** Arc01 bounded stdout/stderr in
   memory. Engine output can be larger. Decide whether the runner needs a
   stream-to-file option now, or whether file-backed artifacts plus capped
@@ -128,6 +134,19 @@ managed-process binary.
 
 ## 6. Version history
 
+- **v1.1 - 2026-08-14 (surfaced by slice01).** OQ2 and OQ3 resolved.
+  `wolong-status` now owns final `PANDAPI_STATUS` parsing, and `wolong-gate`
+  owns shared supervised argv construction, gate execution, artifact metadata,
+  and managed-status mapping. `wolong-binaries` now exposes parser, grounder,
+  and engine lookup over the existing app-env-only policy. CI uses strict
+  checked-in fixture executables for Wolong-side process-contract behavior,
+  while local CDC evidence records real `../chengdu/bin/pandapi-*` behavior:
+  minimal parser/grounder/engine exits `0/0/0`, and unsolvable exits `0/0/2`
+  with engine `status=domain_no_plan`, `outcome=no_plan`, and no plan
+  artifact. A residual hardening note remains for later slices: the mapper
+  classifies from OS exit status plus `status` and preserves status-line
+  `exit_code`; it does not yet reject a contradictory status-line
+  `exit_code`.
 - **v1.0 - 2026-08-14.** Initial arc02 plan, opened after arc01 close. Sources:
   arc01 closing report, project plan v1.1, Chengdu `docs/reference/cli.md`,
   Chengdu `docs/managed-process.md`, and Chengdu fixture contract records for
