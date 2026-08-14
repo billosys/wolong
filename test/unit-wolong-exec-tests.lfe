@@ -1,5 +1,6 @@
 (defmodule unit-wolong-exec-tests
-  (behaviour ltest-unit))
+  (behaviour ltest-unit)
+  (export all))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
@@ -49,7 +50,7 @@
 ;;; completed processes
 ;;; ----------------
 
-(deftest exit-zero-captures-stdout-stderr
+(defun exit_zero_captures_stdout_stderr_test ()
   (let* ((result (run-fixture "exit-with-output.sh" '("0") (opts)))
          (value (result-value result)))
     (is-equal 'ok (element 1 result))
@@ -58,7 +59,7 @@
     (is-equal #b("stderr:ok\n") (result-get value 'stderr))
     (is-equal 'false (result-get value 'timed-out))))
 
-(deftest nonzero-exit-is-completed-result
+(defun nonzero_exit_is_completed_result_test ()
   (let* ((result (run-fixture "exit-with-output.sh" '("7") (opts)))
          (value (result-value result)))
     (is-equal 'ok (element 1 result))
@@ -66,7 +67,7 @@
     (is-equal #b("stdout:ok\n") (result-get value 'stdout))
     (is-equal #b("stderr:ok\n") (result-get value 'stderr))))
 
-(deftest argv-metacharacters-arrive-unchanged
+(defun argv_metacharacters_arrive_unchanged_test ()
   (let* ((argument "alpha beta ; $HOME && echo nope | cat")
          (result (run-fixture "argv-echo.sh" (list argument) (opts)))
          (value (result-value result)))
@@ -77,7 +78,7 @@
 ;;; failures and recovery
 ;;; ----------------
 
-(deftest bad-executable-is-typed-exec-error-and-app-recovers
+(defun bad_executable_is_typed_exec_error_and_app_recovers_test ()
   (let ((bad (wolong-exec:run "wolong-missing-executable-for-test" '() (opts))))
     (is-equal 'error (element 1 bad))
     (is-equal 'exec (element 1 (element 2 bad)))
@@ -85,7 +86,7 @@
     (is-not (=:= 'undefined (whereis 'exec)))
     (is-equal 'ok (element 1 (run-fixture "exit-with-output.sh" '("0") (opts))))))
 
-(deftest simple-timeout-returns-partial-output
+(defun simple_timeout_returns_partial_output_test ()
   (let* ((result (run-fixture "simple-timeout.sh" '() (opts)))
          (value (result-value result)))
     (is-equal 'timeout (element 1 result))
@@ -93,7 +94,7 @@
     (is-equal #b("before-timeout\n") (result-get value 'stdout))
     (is-equal #b("stderr-before-timeout\n") (result-get value 'stderr))))
 
-(deftest term-resistant-timeout-kills-process-and-recovers
+(defun term_resistant_timeout_kills_process_and_recovers_test ()
   (let* ((pid-file (filename:join (list "/tmp" "wolong-term-resistant.pid")))
          (_ (file:delete pid-file))
          (result (run-fixture "term-resistant-timeout.sh" (list pid-file) (opts)))
@@ -110,7 +111,7 @@
 ;;; output caps
 ;;; ----------------
 
-(deftest stdout-and-stderr-are-capped-independently
+(defun stdout_and_stderr_are_capped_independently_test ()
   (let* ((result (run-fixture "output-flood.sh" '() (small-output-opts)))
          (value (result-value result)))
     (is-equal 'ok (element 1 result))

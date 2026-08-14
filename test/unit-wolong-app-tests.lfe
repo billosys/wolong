@@ -1,9 +1,10 @@
 (defmodule unit-wolong-app-tests
-  (behaviour ltest-unit))
+  (behaviour ltest-unit)
+  (export all))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
-(deftest start-stop-clean
+(defun start_stop_clean_test ()
   (ets:new 'wolong-test-log-sink '(named_table public set))
   (logger:add_handler 'wolong-test-log-collector 'wolong-test-log-collector
                        (map 'level 'error))
