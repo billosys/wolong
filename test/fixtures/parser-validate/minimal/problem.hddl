@@ -1,0 +1,6 @@
+;; Minimal valid HDDL problem for parser validation tests.
+(define (problem ship-the-spec)
+  (:domain project-work)
+  (:objects ccdp-v03 - artifact)
+  (:htn :ordered-subtasks (produce ccdp-v03))
+  (:init))

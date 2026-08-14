@@ -1,0 +1,6 @@
+;; Problem is unchanged from the minimal fixture; reference break is in domain.hddl.
+(define (problem ship-the-spec)
+  (:domain project-work)
+  (:objects ccdp-v03 - artifact)
+  (:htn :ordered-subtasks (produce ccdp-v03))
+  (:init))

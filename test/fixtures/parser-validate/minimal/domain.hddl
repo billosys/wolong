@@ -1,0 +1,20 @@
+;; Minimal valid HDDL domain for parser validation tests.
+(define (domain project-work)
+  (:types slice artifact)
+  (:predicates (drafted ?a - artifact) (reviewed ?a - artifact))
+
+  (:task produce :parameters (?a - artifact))
+
+  (:method m-produce
+    :parameters (?a - artifact)
+    :task (produce ?a)
+    :ordered-subtasks (and (draft ?a) (review ?a)))
+
+  (:action draft
+    :parameters (?a - artifact)
+    :effect (drafted ?a))
+
+  (:action review
+    :parameters (?a - artifact)
+    :precondition (drafted ?a)
+    :effect (reviewed ?a)))
