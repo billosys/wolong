@@ -1,0 +1,2 @@
+(define (problem output-unavailable-problem)
+  (:domain output-unavailable))

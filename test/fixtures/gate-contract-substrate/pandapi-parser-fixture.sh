@@ -26,37 +26,25 @@ domain="$5"
 problem="$6"
 
 if [ ! -r "$domain" ]; then
-    printf 'pandapi-parser: cannot read domain: %s\n' "$domain" >&2
     status input_unavailable 20 caller_error absent path_role=domain operation=open
     exit 20
 fi
 
 if [ ! -r "$problem" ]; then
-    printf 'pandapi-parser: cannot read problem: %s\n' "$problem" >&2
     status input_unavailable 20 caller_error absent path_role=problem operation=open
     exit 20
 fi
 
-if grep -q 'draffted' "$domain" || grep -q 'unbalanced paren' "$domain"; then
-    printf 'pandapi-parser: parser input invalid\n' >&2
-    status input_invalid 22 input_model_error discarded
-    exit 22
-fi
-
-if grep -q 'force-output-unavailable' "$domain"; then
-    printf 'pandapi-parser: cannot write output: %s\n' "$output" >&2
-    status output_unavailable 21 caller_error absent path_role=output operation=open
-    exit 21
-fi
-
-if grep -q 'force-timeout' "$domain"; then
-    sleep 2
-fi
-
-if ! printf 'fixture parser artifact\n' >"$output"; then
-    printf 'pandapi-parser: cannot write output: %s\n' "$output" >&2
-    status output_unavailable 21 caller_error absent path_role=output operation=open
-    exit 21
+if grep -q 'wolong-unsolvable' "$domain"; then
+    printf 'fixture parser artifact\nunsolvable\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+else
+    printf 'fixture parser artifact\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
 fi
 
 status ok 0 success complete artifact=file

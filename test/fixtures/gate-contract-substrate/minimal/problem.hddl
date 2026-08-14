@@ -1,0 +1,5 @@
+(define (problem wolong-minimal-problem)
+  (:domain wolong-minimal)
+  (:objects)
+  (:init)
+  (:goal (ready)))

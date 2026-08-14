@@ -1,6 +1,8 @@
 (defmodule wolong-binaries
   (export
    (parser 0)
+   (grounder 0)
+   (engine 0)
    (resolve 1)))
 
 ;;; ----------------
@@ -9,6 +11,12 @@
 
 (defun parser ()
   (resolve 'parser))
+
+(defun grounder ()
+  (resolve 'grounder))
+
+(defun engine ()
+  (resolve 'engine))
 
 (defun resolve (component)
   (case (wolong-config:validate)

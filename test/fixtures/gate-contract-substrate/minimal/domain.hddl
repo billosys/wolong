@@ -1,0 +1,8 @@
+(define (domain wolong-minimal)
+  (:requirements :typing)
+  (:types item)
+  (:predicates (ready))
+  (:action mark-ready
+    :parameters ()
+    :precondition ()
+    :effect (ready)))

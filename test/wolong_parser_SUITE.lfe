@@ -7,16 +7,22 @@
    (locator_non_executable_parser_is_typed 1)
    (valid_pair_maps_success 1)
    (missing_input_maps_missing_file 1)
+   (output_unavailable_maps_output_unavailable 1)
    (broken_syntax_maps_invalid_hddl 1)
-   (broken_reference_maps_invalid_hddl 1)))
+   (broken_reference_maps_invalid_hddl 1)
+   (timeout_maps_parser_timeout 1)
+   (bad_interpreter_maps_parser_status_missing 1)))
 
 (defun all ()
   '(locator_missing_parser_is_typed
     locator_non_executable_parser_is_typed
     valid_pair_maps_success
     missing_input_maps_missing_file
+    output_unavailable_maps_output_unavailable
     broken_syntax_maps_invalid_hddl
-    broken_reference_maps_invalid_hddl))
+    broken_reference_maps_invalid_hddl
+    timeout_maps_parser_timeout
+    bad_interpreter_maps_parser_status_missing))
 
 (defun suite ()
   `(#(timetrap #(seconds 30))))
@@ -85,6 +91,20 @@
     (equal 20 (map-get status 'exit-code))
     (equal #b("domain") (map-get status 'path-role))))
 
+(defun output_unavailable_maps_output_unavailable (_config)
+  (set-env (parser-fixture))
+  (ok (element 1 (application:ensure_all_started 'wolong)))
+  (let* ((result (wolong:validate (fixture-path "parser-validate/output-unavailable/domain.hddl")
+                                  (fixture-path "parser-validate/output-unavailable/problem.hddl")))
+         (reason (element 2 result))
+         (detail (element 2 reason))
+         (status (map-get detail 'status-fields)))
+    (equal 'error (element 1 result))
+    (equal 'output-unavailable (element 1 reason))
+    (equal #b("output_unavailable") (map-get status 'status))
+    (equal #b("parser") (map-get status 'component))
+    (equal 21 (map-get status 'exit-code))))
+
 (defun broken_syntax_maps_invalid_hddl (_config)
   (set-env (parser-fixture))
   (ok (element 1 (application:ensure_all_started 'wolong)))
@@ -98,6 +118,29 @@
   (assert-invalid-hddl
    (wolong:validate (fixture-path "parser-validate/broken-reference/domain.hddl")
                     (fixture-path "parser-validate/broken-reference/problem.hddl"))))
+
+(defun timeout_maps_parser_timeout (_config)
+  (application:set_env 'wolong 'binaries (map 'parser (parser-fixture)))
+  (application:set_env 'wolong 'gate-timeouts (map 'parse 1))
+  (application:set_env 'wolong 'workdir
+                       (map 'base-dir (temp-workdir) 'keep-artifacts 'true))
+  (ok (element 1 (application:ensure_all_started 'wolong)))
+  (let* ((result (wolong:validate (fixture-path "parser-validate/timeout/domain.hddl")
+                                  (fixture-path "parser-validate/timeout/problem.hddl")))
+         (reason (element 2 result)))
+    (equal 'error (element 1 result))
+    (equal 'parser (element 1 reason))
+    (equal 'timeout (element 2 reason))))
+
+(defun bad_interpreter_maps_parser_status_missing (_config)
+  (set-env (fixture-path "parser-validate/bad-interpreter-parser-fixture.sh"))
+  (ok (element 1 (application:ensure_all_started 'wolong)))
+  (let* ((result (wolong:validate (fixture-path "parser-validate/minimal/domain.hddl")
+                                  (fixture-path "parser-validate/minimal/problem.hddl")))
+         (reason (element 2 result)))
+    (equal 'error (element 1 result))
+    (equal 'parser (element 1 reason))
+    (equal 'status-missing (element 2 reason))))
 
 (defun assert-invalid-hddl (result)
   (let* ((reason (element 2 result))

@@ -1,0 +1,5 @@
+(define (problem wolong-unsolvable-problem)
+  (:domain wolong-unsolvable)
+  (:objects)
+  (:init)
+  (:goal (ready)))

@@ -1,0 +1,2 @@
+(define (problem timeout-problem)
+  (:domain timeout))
