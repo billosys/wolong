@@ -14,9 +14,11 @@ You are CC implementing `slice03-parser-validate` in
 7. `docs/design-v0.1.0/arc01-exec-substrate/slice02-exec-runner/cdc-verification.md`
 8. `docs/design-v0.1.0/arc01-exec-substrate/slice03-parser-validate/slice-doc.md`
 9. `docs/design-v0.1.0/arc01-exec-substrate/slice03-parser-validate/ledger.md`
-10. `src/wolong-config.lfe`
-11. `src/wolong-exec.lfe`
-12. `config/sys.config`
+10. `../chengdu/docs/reference/cli.md`
+11. `../chengdu/docs/managed-process.md`
+12. `src/wolong-config.lfe`
+13. `src/wolong-exec.lfe`
+14. `config/sys.config`
 
 Also load the collaboration framework and the Erlang/LFE guidance used by this
 repo. Ledger discipline applies: update the ledger as you work, with
@@ -27,8 +29,8 @@ attested evidence; do not leave evidence until the final close.
 Build the first real pandaPI integration: parser validation only.
 
 At close, `(wolong:validate domain-path problem-path)` should locate the
-configured raw `pandaPIparser`, run it via `wolong-exec:run/3`, and return
-typed public results for:
+configured current pre-release `pandapi-parser`, run it via
+`wolong-exec:run/3`, and return typed public results for:
 
 - valid HDDL pair;
 - missing input file;
@@ -40,8 +42,8 @@ parser result mapping. It is not the planning pipeline.
 
 ## Critical First Step
 
-Before implementing the mapper, inspect and record the actual raw
-`pandaPIparser` command contract available in the working environment:
+Before implementing the mapper, inspect and record the actual current Chengdu
+pre-release parser command contract available in the working environment:
 
 - argv shape;
 - whether it needs or writes an output/artifact path;
@@ -50,11 +52,35 @@ Before implementing the mapper, inspect and record the actual raw
   cases;
 - which stream carries diagnostics.
 
-The arc plan currently expects raw `pandaPIparser` and exit-code mapping
-roughly `0` success, `2` missing file, and `255` invalid HDDL. If your survey
-contradicts that contract, stop and report before switching to Chengdu's
-managed `pandapi-parser` wrapper, adding a downloader, or inventing a
-compatibility layer.
+Use the sibling Chengdu checkout binaries until the 0.3.0 release exists:
+
+```text
+../chengdu/bin/pandapi-parser
+../chengdu/bin/pandapi-grounder
+../chengdu/bin/pandapi-engine
+```
+
+Only `pandapi-parser` is in scope for this slice. Older `pandaPIparser`
+references are legacy context and must not be used for this implementation.
+Use `../chengdu/docs/reference/cli.md` and
+`../chengdu/docs/managed-process.md` as primary contract sources.
+
+The documented supervised parser shape is:
+
+```text
+pandapi-parser --supervised --status=stderr --output OUT.htn DOMAIN.hddl PROBLEM.hddl
+```
+
+Classify from process exit code and the final `PANDAPI_STATUS` fields, not
+from diagnostic prose. The current docs define parser success as
+`status=ok`/exit `0`, missing input as `status=input_unavailable`/exit `20`,
+unavailable output as `status=output_unavailable`/exit `21`, and invalid input
+as `status=input_invalid`/exit `22`.
+
+If your survey of `../chengdu/bin/pandapi-parser` does not give enough
+information to map the four required outcomes, stop and report before adding
+a downloader, assuming 0.3.0 release artifacts, or inventing a compatibility
+layer.
 
 ## Required Shape
 
@@ -82,6 +108,10 @@ Invoke the parser through:
 
 Do not concatenate a shell command string.
 
+The argv should include the supervised CLI flags documented by Chengdu:
+`--supervised`, `--status=stderr`, `--output`, an output `.htn` path, domain
+path, and problem path.
+
 ## Fixtures and Tests
 
 Use Common Test for OS/binary integration. A good target is a separate suite
@@ -100,11 +130,11 @@ test/fixtures/parser-validate/
 You may use the Chengdu fixture corpus as the source, but wolong tests must not
 depend on `/Users/oubiwann/lab/billosys/chengdu` at runtime.
 
-If remote CI cannot run a real `pandaPIparser`, use a checked-in parser fixture
-executable to prove wolong's locator, runner invocation, and mapping logic in
-CI. Record that honestly. Do not claim CI performed a real pandaPI parser run
-unless it actually did. Separately record any real-parser evidence you can
-obtain locally.
+If remote CI cannot run the sibling Chengdu `pandapi-parser`, use a checked-in
+parser fixture executable to prove wolong's locator, runner invocation, and
+mapping logic in CI. Record that honestly. Do not claim CI performed a real
+Chengdu parser run unless it actually did. Separately record any real-parser
+evidence you can obtain locally from `../chengdu/bin/pandapi-parser`.
 
 EUnit/ltest may cover unit-pure mapping helpers or locator shape checks, but
 do not put process/app/binary integration coverage in EUnit.
@@ -117,10 +147,11 @@ Stay inside slice03:
 - no `wolong:verify`;
 - no grounder or engine invocation;
 - no gate pipeline or `gen_statem`;
-- no scratch-dir dispatch lifecycle beyond whatever the raw parser itself
+- no scratch-dir dispatch lifecycle beyond whatever the parser command itself
   requires for this one command;
 - no Chengdu release downloader/provisioning;
-- no switch to `pandapi-parser` wrapper without operator approval;
+- no assumption that Chengdu 0.3.0 release artifacts exist;
+- no fallback to legacy `pandaPIparser` names;
 - no ltest/rebar3_lfe remediation beyond preserving the existing workaround.
 
 ## Verification Before Close
@@ -140,7 +171,7 @@ locator assertion, show the owning test gate fails with nonzero exit, revert
 the tamper, and show the suite passes again.
 
 If CI is available, record the linked green run on both Ubuntu and macOS. If
-CI uses a fixture executable instead of real `pandaPIparser`, say that
+CI uses a fixture executable instead of real `pandapi-parser`, say that
 directly in the ledger and close report.
 
 ## Close
@@ -151,7 +182,7 @@ When implementation is complete:
 2. Write `closing-report.md` with a per-row walk for all ledger rows.
 3. Add `Bubble-up to the arc` answering:
    - did slice03 deliver the slice breakdown line in `arc-plan.md`;
-   - did the raw parser contract match the arc assumption;
+   - did the current `pandapi-parser` contract match the slice assumption;
    - what did implementation reveal that arc02 must account for;
    - scope-as-specified vs. scope-as-delivered, with deferrals named.
 4. Do not create `cdc-verification.md`; CDC writes that after independent

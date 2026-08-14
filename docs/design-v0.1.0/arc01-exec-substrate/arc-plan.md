@@ -11,10 +11,11 @@ return a typed result — timeouts, kill escalation, exit-code mapping proven.*
 Expanded: this arc builds the substrate every later gate stands on — the OTP
 application skeleton in LFE, erlexec integrated and supervised, and a single
 generic "run this external tool, bounded in time, and give me a typed
-answer" capability, proven against the real pandaPIparser in its simplest
-role (validation, runbook §5). At arc close, `(wolong:validate dom prob)`
-works end to end: it locates a configured parser binary, runs it under
-erlexec with a timeout, maps exit codes 0/2/255 to
+answer" capability, proven against the current pre-release `pandapi-parser`
+binary from the sibling Chengdu checkout in its simplest role: parser
+validation. At arc close, `(wolong:validate dom prob)` works end to end: it
+locates a configured parser binary, runs it under erlexec with a timeout, maps
+the current Chengdu parser contract into
 `#(ok ...)`/`#(error #(missing-file ...))`/`#(error #(invalid-hddl ...))`,
 kills it cleanly if it hangs, and never leaks an OS process. The risky
 unknowns this arc exists to burn down are erlexec's ergonomics from LFE and
@@ -27,7 +28,7 @@ wait for arc02 on purpose.
 |-------|------|------------------|------------------|
 | slice01 | `app-skeleton` | rebar3 LFE OTP app `wolong`: deps (erlexec, ltest), `wolong_app`/`wolong_sup`, config schema stub (binary paths, timeouts), compiles, starts, stops clean; CI stub running the test suite. | everything |
 | slice02 | `exec-runner` | `wolong_exec`: the generic erlexec wrapper — `(run cmd args opts)` → `#(ok stdout exit-status)` / `#(timeout partial-output)` / `#(error reason)`, with kill escalation and no-zombie guarantee; tested against fixture scripts (sleep, exit N, stdout floods) — no pandaPI yet. | slice03, all of arc02 |
-| slice03 | `parser-validate` | `wolong_binaries` (config-driven locator with startup existence/exec check) + first real integration: `(wolong:validate ...)` via pandaPIparser, exit-code mapping per runbook §5 table, tested against the runbook's minimal pair and its broken variants as fixtures. | arc02 |
+| slice03 | `parser-validate` | `wolong_binaries` (config-driven locator with startup existence/exec check) + first real integration: `(wolong:validate ...)` via current pre-release `pandapi-parser` from `../chengdu/bin/`, parser-contract mapping surveyed at slice start, tested against the minimal pair and broken variants as fixtures. | arc02 |
 
 Sizing judgment: three slices, each one context with headroom. slice02 is
 the load-bearing risk slice (erlexec semantics under deliberate abuse) and
@@ -37,11 +38,14 @@ composition proof, not new machinery.
 
 ## 3. Dependencies
 
-**Consumes:** erlexec (hex); the runbook's §5 exit-code table (*reproduced*
-grades) and minimal-pair fixtures; locally-built pandaPI binaries on the dev
-machine (the operator's field-built macOS set, and/or sandbox-built Linux
-set) via config — chengdu releases are NOT a dependency of this arc
-(deliberate: arc03 owns provisioning; arc01 must not block on chengdu).
+**Consumes:** erlexec (hex); the parser contract and minimal-pair fixtures
+from the active Chengdu pre-release line; locally-built pandaPI binaries on
+the dev machine via explicit config. Until Chengdu 0.3.0 is cut, the intended
+developer integration path is the sibling checkout's `../chengdu/bin/`
+pre-release binaries: `pandapi-parser`, `pandapi-grounder`, and
+`pandapi-engine`. Chengdu release artifacts are NOT a dependency of this arc
+(deliberate: arc03 owns provisioning; arc01 must not block on release
+publication).
 
 **Leaves for arc02:** the `wolong_exec` contract (typed run results) that
 each gate will call; `wolong_binaries` extended trivially to the other two
@@ -76,11 +80,19 @@ arc02 commits to it.
 |-----|-----------|-----------------|
 | A1 | `rebar3 lfe compile` + app start/stop clean on a machine with configured binaries; test suite green. | reproduced |
 | A2 | `wolong_exec` demonstrably kills a deliberately-hanging process at its timeout, returns a typed timeout, and leaves no OS process behind (checked via OS process table in the test). | reproduced |
-| A3 | `(wolong:validate ...)` returns the correct distinct typed result for: valid pair, missing file, syntax error, undeclared predicate — the four runbook §5 rows. | reproduced via test suite |
+| A3 | `(wolong:validate ...)` returns the correct distinct typed result for: valid pair, missing file, syntax error, undeclared predicate or broken reference — classified from the current `pandapi-parser` exit code and final `PANDAPI_STATUS`. | reproduced via test suite |
 | A4 | No dispatch path returns an untyped or stringly error; every error term names its gate/reason (attested by review of the public API surface). | attested |
 
 ## 6. Version history
 
+- **v1.3 — 2026-08-14 (operator correction before slice03 implementation).**
+  The parser integration target is the current Chengdu pre-release binary
+  name `pandapi-parser`, supplied from the sibling checkout at
+  `../chengdu/bin/pandapi-parser` until Chengdu 0.3.0 release artifacts exist.
+  Older references to the legacy raw `pandaPIparser` executable and its
+  historical exit-code table are superseded for slice03; CC must survey and
+  record the active `pandapi-parser` contract before implementing result
+  mapping.
 - **v1.2 — 2026-08-14 (surfaced by slice02).** OQ2 resolved:
   **bounded in-memory capture for arc01, stream-to-file deferred to arc02.**
   Evidence: `wolong-exec:run/3` carries an `output-limit-bytes` option,
