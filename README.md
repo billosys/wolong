@@ -2,6 +2,8 @@
 
 [![build](https://github.com/billosys/wolong/actions/workflows/build.yml/badge.svg)](https://github.com/billosys/wolong/actions/workflows/build.yml)
 
+[![][logo]][logo-large]
+
 *卧龙 — Crouching Dragon.*
 
 ## Overview
@@ -54,3 +56,8 @@ rebar3 dialyzer
 ## License
 
 TBD.
+
+[//]: ---Named-Links---
+
+[logo]: assets/images/zhuge-liang-y250.png
+[logo-large]: assets/images/zhuge-liang.png
