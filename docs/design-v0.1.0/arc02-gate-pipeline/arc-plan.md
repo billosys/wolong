@@ -111,10 +111,16 @@ managed-process binary.
   surveyed locally and recorded separately; CI does not claim to run sibling
   Chengdu binaries. *(Was: open. Resolved 2026-08-14 by slice01 — see Version
   History.)*
-- **OQ4 (slice02): stream-to-file capture.** Arc01 bounded stdout/stderr in
-  memory. Engine output can be larger. Decide whether the runner needs a
-  stream-to-file option now, or whether file-backed artifacts plus capped
-  diagnostics are sufficient for 0.1.0.
+- **OQ4 (slice02): RESOLVED — file-backed artifacts plus capped diagnostics.**
+  The current Chengdu managed contract writes parser, grounder, and engine
+  artifacts to explicit files and keeps supervised stdout empty on normal
+  paths. Slice02 therefore keeps `wolong-exec` stdout/stderr as capped
+  diagnostic capture for 0.1.0 and routes large gate products through stable
+  workspace artifact paths. Re-enter stream-to-file runner capture only if a
+  later supported Chengdu surface emits required non-artifact streams that
+  exceed the configured cap, or if the public API needs full diagnostic stream
+  retention rather than bounded debugging snippets. *(Was: open. Resolved
+  2026-08-14 by slice02 — see Version History.)*
 - **OQ5 (slice03): solved-plan representation.** Decide the first public plan
   term shape: action sequence, artifact metadata, decomposition/provenance
   fields, and what remains a deferred converter/bridge concern.
@@ -134,6 +140,18 @@ managed-process binary.
 
 ## 6. Version history
 
+- **v1.2 - 2026-08-14 (surfaced by slice02).** OQ4 resolved in favor of
+  file-backed artifacts plus capped diagnostics for 0.1.0. Slice02 added the
+  internal `wolong-pipeline` and `wolong-workspace` substrate: one unique
+  dispatch directory under configured `workdir.base-dir`, stable artifact roles
+  (`parser.htn`, `grounder.sas`, `engine.plan`), explicit gate output paths,
+  keep/delete cleanup policy, short-circuit parser/grounder/engine failures,
+  and success-shaped engine `domain_no_plan`. The Slice01 residual was fixed:
+  `wolong-gate` now returns `status-exit-mismatch` when the observed OS exit
+  status contradicts the final status-line `exit_code`; `wolong:validate/2`
+  names that mismatch as a parser error. Slice03 can wrap the internal
+  pipeline without revisiting workspace ownership, but still owns the public
+  solved-plan term and `#(unsolvable ...)` translation.
 - **v1.1 - 2026-08-14 (surfaced by slice01).** OQ2 and OQ3 resolved.
   `wolong-status` now owns final `PANDAPI_STATUS` parsing, and `wolong-gate`
   owns shared supervised argv construction, gate execution, artifact metadata,
@@ -143,10 +161,10 @@ managed-process binary.
   while local CDC evidence records real `../chengdu/bin/pandapi-*` behavior:
   minimal parser/grounder/engine exits `0/0/0`, and unsolvable exits `0/0/2`
   with engine `status=domain_no_plan`, `outcome=no_plan`, and no plan
-  artifact. A residual hardening note remains for later slices: the mapper
-  classifies from OS exit status plus `status` and preserves status-line
-  `exit_code`; it does not yet reject a contradictory status-line
-  `exit_code`.
+  artifact. A residual hardening note remained after slice01: the mapper
+  classified from OS exit status plus `status` and preserved status-line
+  `exit_code`, but did not yet reject a contradictory status-line `exit_code`.
+  Slice02 resolved that residual in v1.2.
 - **v1.0 - 2026-08-14.** Initial arc02 plan, opened after arc01 close. Sources:
   arc01 closing report, project plan v1.1, Chengdu `docs/reference/cli.md`,
   Chengdu `docs/managed-process.md`, and Chengdu fixture contract records for
