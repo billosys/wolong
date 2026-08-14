@@ -24,8 +24,11 @@ jobs:
       - name: Compile (warnings-as-errors)
         run: rebar3 compile
 
-      - name: Test (eunit, incl. the erlexec probe)
+      - name: Test (eunit)
         run: rebar3 as test eunit
+
+      - name: Test (common_test, incl. erlexec fixtures)
+        run: rebar3 as test ct
 
       - name: Xref
         run: rebar3 xref

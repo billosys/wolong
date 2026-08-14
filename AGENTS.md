@@ -11,7 +11,8 @@ consumes).
   confirmed by operator 2026-08-05). Do not invent parallel structures.
 - Load the `collaboration-framework` skill at session start; load the
   `erlang-guidelines` skill whenever writing or reviewing code (OTP design,
-  supervision, typespecs, ltest/eunit). Code is LFE targeting rebar3.
+  supervision, typespecs, ltest/eunit, Common Test). Code is LFE targeting
+  rebar3.
 - Read `docs/design-v0.1.0/project-plan.md` first. The API contract that
   must never erode: **validated-plan-or-unsolvable as an actual return
   type** — no unverified plan crosses the API, and `Status: Proven
@@ -33,10 +34,19 @@ consumes).
 - **Repo home**: `billosys` org, public, default branch `main` — stated
   explicitly because the one process defect of `chengdu` was a repo born
   in the wrong org.
-- **Pins-not-floats**: dependency versions, OTP versions in CI, and
-  GitHub Action majors are pinned exactly; version choices are surveyed
-  live at the point they're pinned, not recalled from memory, and the
-  rationale is recorded in the relevant slice's ledger.
+- **Erlang dependency constraints:** Hex deps and project plugins may use
+  normal Erlang-compatible constraints such as `~> 2.2`; `rebar.lock` is the
+  reproducibility artifact for the resolved package set. Do not import
+  chengdu's C/C++ micro-pin rule into wolong. CI OTP/rebar3 versions and
+  GitHub Action majors remain explicit toolchain pins; when a slice relies on
+  a particular runtime/tool version, survey live and record the rationale in
+  that slice's ledger.
+- **Test boundary:** use ltest/EUnit for unit tests; use Common Test for
+  integration/system behavior such as application lifecycle, supervision
+  trees, erlexec-managed OS processes, timeouts, kill cleanup, and fixture
+  flows. Canonical LFE CT examples live in
+  `/Users/oubiwann/lab/lfe/lfe/test/*SUITE.lfe`. Keep wolong test artifacts in
+  the existing project test tree; do not create parallel test directories.
 - **Commit footer convention (operator override, 2026-08-07):** every future
   assistant-authored commit message includes these trailers:
   `Co-authored-by: Codex <noreply@openai.com>` and
