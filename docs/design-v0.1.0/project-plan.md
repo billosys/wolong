@@ -20,10 +20,10 @@
 ## 1. Definition of done, and boundaries
 
 **Done means:** a rebar3/LFE OTP application, published to hex.pm as
-`wolong`, that a BEAM system can add as a dependency and use to run the full
-pandaPI gate sequence — parse → ground → solve → convert → **verify** — as
-supervised external OS processes, returning **validated-plan-or-unsolvable as
-an actual return type**:
+`wolong`, that a BEAM system can add as a dependency and use to run the
+supported pandaPI managed-process gate sequence, with the verification
+boundary explicit, as supervised external OS processes returning
+**validated-plan-or-unsolvable as an actual return type**:
 
 - `(wolong:plan domain problem opts)` → `#(ok plan)` (with the primitive
   action sequence *and* the decomposition tree, plus provenance) |
@@ -33,15 +33,18 @@ an actual return type**:
 - `(wolong:validate domain problem)` → `#(ok properties)` | `#(error ...)`
 
 Every external process runs under erlexec with a per-gate timeout and kill
-escalation — a hung `pandaPIengine` search dies cleanly and reports as a
+escalation — a hung `pandapi-engine` search dies cleanly and reports as a
 typed timeout, never a zombie. Every gate failure crashes that dispatch
 loudly with a typed error naming the gate — never a silent partial artifact
 (the toolchain note's §8 gate contract, promoted to API semantics).
 
 **The one behavior this project exists to guarantee:** the confident-plan-
 for-unsolvable-problem failure mode is structurally impossible at this API.
-`Status: Proven unsolvable` (engine exit 0 — the trap the runbook documents)
-maps to `#(unsolvable ...)`, and no plan is returned unverified.
+The historical runbook trap was an engine no-plan outcome that looked
+success-shaped at the process level; the current Chengdu managed-process
+contract exposes that as `status=domain_no_plan`, exit `2`. In either
+contract shape, Wolong maps valid no-plan to `#(unsolvable ...)`, and no plan
+is returned unverified.
 
 **Explicit non-goals (0.1.0):**
 
@@ -70,7 +73,7 @@ downstream sit the pandaPI executables that chengdu builds and releases.
 | Arc | Slug | Capability (one line) | Depends on |
 |-----|------|----------------------|------------|
 | arc01 | `exec-substrate` | wolong can run one supervised pandaPI process via erlexec and return a typed result — timeouts, kill escalation, exit-code mapping proven. | — |
-| arc02 | `gate-pipeline` | The full five-gate dispatch as a supervised state machine; `plan`/`verify`/`validate` API; validated-plan-or-unsolvable end to end. | arc01 |
+| arc02 | `gate-pipeline` | The supervised current `pandapi-*` gate pipeline; `plan`/`validate` API plus an explicit verification-boundary disposition; solved/unsolvable/typed-gate-error results end to end. | arc01 |
 | arc03 | `provisioning` | Binaries fetched and checksum-verified from chengdu releases; config surface; hex.pm release readiness. | arc02; chengdu arc02 |
 
 Load-bearing note: arc01 deliberately proves the risky substrate (erlexec
@@ -84,12 +87,17 @@ consumer side of chengdu's provenance manifest (chengdu ledger row P4).
 - **arc01 — closed 2026-08-14.** `arc01-exec-substrate/closing-report.md`
   closes the substrate arc with local gates, real `pandapi-parser` evidence,
   and CI fixture coverage.
-- **arc02 — next.** Still named only, per *plan late, plan deep*. The
-  `gen_statem` gate design sketch lives in arc01's "leaves for arc02" so it
-  is not lost, but detailed planning now starts from arc01's bubble-ups:
+- **arc02 — open 2026-08-14.** Detailed plan:
+  `arc02-gate-pipeline/arc-plan.md`. The arc opens from arc01's bubble-ups:
   current managed `PANDAPI_STATUS` classification, parser invalidity as
   `invalid-kind=undistinguished`, app-env-only binary lookup, and stream-to-
-  file capture deferred until engine scale demands it.
+  file capture deferred until engine scale demands it. The old five-gate
+  sketch (`parse -> ground -> solve -> convert -> verify`) is now treated as
+  inherited context to reconcile, not an implementation promise: current
+  Chengdu 0.3.0 managed docs expose parser, grounder, and engine as the
+  supported external normal surfaces, and arc02 slice05 must either implement
+  a supported verification surface or explicitly defer `wolong:verify` with a
+  project-plan/README re-entry condition.
 - **arc03 — named only.** Depends on chengdu arc02 existing; sequencing risk
   recorded: if chengdu releases lag, arc03 falls back to documented-manual
   binary placement, and the fetch step becomes a fast follow.
@@ -109,6 +117,20 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.2 — 2026-08-14 (surfaced by arc02 opening).** Arc02 is now open at
+  `arc02-gate-pipeline/arc-plan.md`, with slice01
+  `gate-contract-substrate` opened for CC. The roadmap line for arc02 is
+  refined from the older "full five-gate dispatch" wording to the current
+  supported Chengdu managed-process surface: parser, grounder, and engine.
+  The validation/verification invariant is preserved by making the
+  verification boundary explicit. The top-level no-plan wording is also
+  updated from the historical `Status: Proven unsolvable`/exit `0` trap to
+  current `status=domain_no_plan`/exit `2`, while preserving the invariant
+  that no-plan is `#(unsolvable ...)`, not a generic error. `wolong:verify`
+  must not be implemented or documented as successful unless a supported
+  verification contract exists; if no such contract exists in the current
+  Chengdu line, arc02 must update the project docs to defer it with a concrete
+  re-entry condition.
 - **v1.1 — 2026-08-14 (surfaced by arc01 close).** Arc01 closes the
   supervised-process substrate and moves project status to arc02 next. The
   project plan now follows the current Chengdu 0.3.0 pre-release

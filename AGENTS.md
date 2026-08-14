@@ -15,8 +15,10 @@ consumes).
   rebar3.
 - Read `docs/design-v0.1.0/project-plan.md` first. The API contract that
   must never erode: **validated-plan-or-unsolvable as an actual return
-  type** — no unverified plan crosses the API, and `Status: Proven
-  unsolvable` (engine exit 0!) is a success-shaped result, not an error.
+  type** — no unverified plan crosses the API, and the current Chengdu
+  `status=domain_no_plan` / exit `2` engine outcome is a success-shaped domain
+  result, not a generic error. Older runbook wording about
+  `Status: Proven unsolvable` / exit `0` is historical context only.
 - Design substrate: "Composite Cognition — Supervision-Tree Architecture"
   and "Planner Toolchain Selection" (project docs / operator's Dropbox
   LLMs folder), plus the PANDA Runbook (gate mechanics + exit-code tables,
