@@ -1,6 +1,5 @@
 (defmodule unit-wolong-exec-tests
-  (behaviour ltest-unit)
-  (export all))
+  (behaviour ltest-unit))
 
 (include-lib "ltest/include/ltest-macros.lfe")
 
