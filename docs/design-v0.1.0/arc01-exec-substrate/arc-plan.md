@@ -59,10 +59,13 @@ arc02 commits to it.
   verify early that LFE call ergonomics don't warrant a thin macro layer.
   Decide by end of slice01. *(Was: open. Resolved 2026-08-06 by slice01 —
   see Version History.)*
-- **OQ2 (slice02):** stdout capture strategy for large outputs — engine
-  output on hard instances can be large; stream-to-file vs. accumulate-in-
-  memory, and where the truncation policy lives. Default: accumulate with a
-  configurable cap for arc01; revisit at arc02 when the engine gate is real.
+- **OQ2 (slice02): RESOLVED — bounded in-memory capture for arc01.** stdout
+  capture strategy for large outputs — engine output on hard instances can be
+  large; stream-to-file vs. accumulate-in-memory, and where the truncation
+  policy lives. Slice02 implements independently capped stdout/stderr
+  accumulation with truncation metadata via `output-limit-bytes`; stream-to-
+  file remains deferred to arc02 when the engine gate is real. *(Was: open.
+  Resolved 2026-08-14 by slice02 — see Version History.)*
 - **OQ3 (slice03):** binary discovery precedence — app env only, or app env
   → `WOLONG_PANDA_PATH` env var → PATH probe. Default: app env only for
   0.1.0 (explicit beats convenient); record any operator pushback.
@@ -78,6 +81,21 @@ arc02 commits to it.
 
 ## 6. Version history
 
+- **v1.2 — 2026-08-14 (surfaced by slice02).** OQ2 resolved:
+  **bounded in-memory capture for arc01, stream-to-file deferred to arc02.**
+  Evidence: `wolong-exec:run/3` carries an `output-limit-bytes` option,
+  applies independent stdout/stderr caps, records observed byte counts and
+  truncation flags, and CT case
+  `stdout_and_stderr_are_capped_independently` verifies both streams. Slice02
+  also surfaced two runner-boundary findings that do not change the arc slice
+  breakdown: missing bare command names are normalized before erlexec can
+  report them as shell-style completed processes, and timeout cleanup is
+  process-group oriented (`kill_group`, `{group, 0}`) so slice03 can call the
+  runner without inheriting child-process ambiguity. A tooling finding remains
+  outside the arc capability: OTP 28.5.0.5 plus current `rebar3_lfe` exposed
+  an ltest/EUnit duplicate-export collision, temporarily handled in
+  `rebar.config` by disabling EUnit auto-discovery suffixes while preserving
+  ltest `deftest` exports.
 - **v1.1 — 2026-08-06 (surfaced by slice01).** OQ1 resolved: **direct
   `exec:run/2` calls, no thin wrapper macro.** Evidence: `wolong`'s erlexec
   probe (`test/unit-wolong-exec-probe-tests.lfe`) calls
