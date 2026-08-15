@@ -23,14 +23,27 @@
 `wolong`, that a BEAM system can add as a dependency and use to run the
 supported pandaPI managed-process gate sequence, with the verification
 boundary explicit, as supervised external OS processes returning
-**validated-plan-or-unsolvable as an actual return type**:
+**validated-plan-or-unsolvable as an actual return type**.
 
-- `(wolong:plan domain problem opts)` → `#(ok plan)` (with the primitive
-  action sequence *and* the decomposition tree, plus provenance) |
-  `#(unsolvable proof-metadata)` | `#(error #(gate reason detail))`
-- `(wolong:verify domain problem plan opts)` → `#(ok verified)` |
-  `#(invalid detail)` | `#(error ...)`
-- `(wolong:validate domain problem)` → `#(ok properties)` | `#(error ...)`
+For 0.1.0, the implemented public surface is:
+
+- `(wolong:plan domain problem opts)` -> `#(ok plan)` with durable engine plan
+  payload bytes, artifact metadata, parser/grounder/engine provenance,
+  workspace metadata, dispatch metadata, and explicit
+  `verification-boundary` metadata | `#(unsolvable detail)` |
+  `#(error #(gate reason detail))`
+- `(wolong:plan domain problem)` -> the default wrapper over `plan/3`
+- `(wolong:validate domain problem)` -> parser validation only:
+  `#(ok properties)` | `#(error ...)`
+
+`wolong:verify` is deferred for 0.1.0 because the current Chengdu 0.3.0
+managed-process contract exposes parser, grounder, and engine as supported
+normal surfaces, but no separate verifier command. The re-entry condition is a
+supported verifier contract from Chengdu or another selected planner backend,
+plus Wolong fixtures and tests proving `#(ok verified)`, `#(invalid detail)`,
+and typed verifier errors. Action-sequence parsing and decomposition-tree
+parsing are also deferred until a stable machine-readable plan/decomposition
+format or supported verifier contract exists.
 
 Every external process runs under erlexec with a per-gate timeout and kill
 escalation — a hung `pandapi-engine` search dies cleanly and reports as a
@@ -109,7 +122,7 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 | Row | Criterion | Target strength |
 |-----|-----------|-----------------|
-| W1 | On a clean machine with chengdu-released binaries, `(wolong:plan ...)` on the runbook's minimal pair returns `#(ok plan)` whose action sequence verifies, and the same call on the runbook's circular-precondition variant returns `#(unsolvable ...)` — the two return types demonstrated side by side. | reproduced |
+| W1 | On a clean machine with chengdu-released binaries, `(wolong:plan ...)` on the runbook's minimal pair returns `#(ok plan)` with durable payload/provenance and explicit `verification-boundary.separate-verifier=not-run`, and the same call on the runbook's circular-precondition variant returns `#(unsolvable ...)` — the two return types demonstrated side by side. | reproduced |
 | W2 | A dispatch whose engine gate exceeds its timeout is killed (no surviving OS process) and returns a typed timeout error naming the gate. | reproduced |
 | W3 | Every gate failure mode from the current managed-process contracts maps to a typed result from exit code plus final machine status (`PANDAPI_STATUS` where available, including the engine no-plan status) — no failure collapses into a generic error or diagnostic-prose scrape. | reproduced via test suite |
 | W4 | The application's supervision tree isolates a crashed one-shot dispatch worker without taking down the app, later dispatch workers can start normally, and concurrent dispatches are isolated (one crash or timeout does not corrupt another dispatch). | reproduced |
@@ -117,6 +130,13 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.4 - 2026-08-15 (surfaced by arc02 slice05).** The 0.1.0 implemented
+  API boundary is now explicit: `wolong:validate/2` is parser validation,
+  `wolong:plan/2` and `wolong:plan/3` run the supported parser -> grounder ->
+  engine chain, solved plans carry `verification-boundary` metadata with
+  `separate-verifier=not-run`, and public `wolong:verify` is deferred until a
+  supported verifier contract exists. W1 no longer implies action-sequence or
+  decomposition-tree parsing for 0.1.0.
 - **v1.3 — 2026-08-15 (surfaced by arc02 slice04).** W4 is clarified to match
   the implemented OTP policy: dispatch workers are temporary one-shot children.
   A crashed dispatch is isolated and typed rather than replayed; the supervision

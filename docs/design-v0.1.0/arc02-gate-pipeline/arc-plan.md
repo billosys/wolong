@@ -92,12 +92,17 @@ managed-process binary.
 
 ## 4. Open questions
 
-- **OQ1 (slice01/slice05): verification boundary.** Current Chengdu 0.3.0
-  managed docs expose parser, grounder, and engine, but no separate supported
-  verifier binary. Decide before public verification API lands: implement a
-  supported verifier if one exists, or update project docs to defer
-  `wolong:verify` with a concrete re-entry condition. Do not add a public
-  function that pretends verification happened.
+- **OQ1 (slice01/slice05): RESOLVED - verifier deferred.** Current Chengdu
+  0.3.0 managed docs and local binaries expose parser, grounder, and engine as
+  supported normal surfaces, but no separate supported verifier binary or
+  managed verifier contract. For 0.1.0, public `wolong:verify` is deferred;
+  solved `wolong:plan` results carry `verification-boundary` metadata with
+  `separate-verifier=not-run`, and action-sequence/decomposition-tree parsing
+  remains deferred. Re-enter only when a supported verifier contract exists
+  and Wolong has fixtures/tests for verified, invalid, and typed verifier-error
+  outcomes. Historical five-gate parse/ground/solve/convert/verify prose is
+  context, not the implemented Arc02 public surface. *(Was: open. Resolved
+  2026-08-15 by slice05 - see Version History.)*
 - **OQ2 (slice01): RESOLVED — shared parser plus gate mapper.** Arc01's
   `PANDAPI_STATUS` parser was extracted from `src/wolong.lfe` into
   `src/wolong-status.lfe`, and shared gate invocation/classification landed in
@@ -146,6 +151,14 @@ managed-process binary.
 
 ## 6. Version history
 
+- **v1.5 - 2026-08-15 (surfaced by slice05).** OQ1 is resolved by explicit
+  deferral. The Chengdu 0.3.0 survey found supported managed surfaces for
+  `pandapi-parser`, `pandapi-grounder`, and `pandapi-engine`, but no supported
+  verifier contract. Arc02 therefore closes with `wolong:validate/2`,
+  `wolong:plan/2`, and `wolong:plan/3`; solved plans state
+  `verification-boundary.separate-verifier=not-run`; public `wolong:verify`,
+  action-sequence parsing, and decomposition-tree parsing are deferred with
+  re-entry conditions.
 - **v1.4 - 2026-08-15 (surfaced by slice04).** Dispatch supervision is now
   implemented with a permanent dispatch supervisor under `wolong-sup` and
   temporary one-shot workers. Crash behavior is typed and isolated rather than
