@@ -121,9 +121,15 @@ managed-process binary.
   exceed the configured cap, or if the public API needs full diagnostic stream
   retention rather than bounded debugging snippets. *(Was: open. Resolved
   2026-08-14 by slice02 — see Version History.)*
-- **OQ5 (slice03): solved-plan representation.** Decide the first public plan
-  term shape: action sequence, artifact metadata, decomposition/provenance
-  fields, and what remains a deferred converter/bridge concern.
+- **OQ5 (slice03): RESOLVED - artifact-backed public plan term.** The first
+  public solved plan is a map containing `outcome=solved`, the durable engine
+  plan artifact payload, artifact metadata, parser/grounder/engine provenance,
+  workspace cleanup metadata, and an explicit verification-boundary field.
+  Action-sequence parsing and decomposition-tree parsing remain deferred until
+  a stable machine-readable plan/decomposition format is proven with fixture
+  and real-binary tests, or until a supported verifier contract makes those
+  fields meaningful at the public boundary. *(Was: open. Resolved 2026-08-15
+  by slice03 - see Version History.)*
 
 ## 5. Arc ledger
 
@@ -140,6 +146,18 @@ managed-process binary.
 
 ## 6. Version history
 
+- **v1.3 - 2026-08-15 (surfaced by slice03).** OQ5 resolved with the first
+  public `wolong:plan/3` shape: `#(ok Plan)` where `Plan` carries
+  `outcome=solved`, durable engine plan payload bytes, plan artifact metadata,
+  parser/grounder/engine provenance, workspace cleanup metadata, and an
+  explicit verification boundary stating that no separate verifier has run.
+  Internal `#(domain-no-plan Detail)` is now translated to public
+  `#(unsolvable Detail)`. `plan/2` is only a default wrapper over `plan/3`.
+  Action-sequence and decomposition-tree parsing are deferred until stable
+  machine-readable formats or a supported verifier contract are proven.
+  Slice04 can add dispatch supervision around the public adapter without
+  changing the solved/no-plan public shape; Slice05 still owns the verification
+  surface and any project-plan/README boundary wording.
 - **v1.2 - 2026-08-14 (surfaced by slice02).** OQ4 resolved in favor of
   file-backed artifacts plus capped diagnostics for 0.1.0. Slice02 added the
   internal `wolong-pipeline` and `wolong-workspace` substrate: one unique
