@@ -13,6 +13,10 @@ consumes).
   `erlang-guidelines` skill whenever writing or reviewing code (OTP design,
   supervision, typespecs, ltest/eunit, Common Test). Code is LFE targeting
   rebar3.
+- For LFE syntax/style decisions, read
+  `/Users/oubiwann/lab/lfe/lfe-manual/src/part7/ai-resources/style-guide.md`
+  before writing or reviewing LFE. Prefer its style guidance plus the existing
+  local idioms over guessed Lisp/Erlang syntax.
 - Read `docs/design-v0.1.0/project-plan.md` first. The API contract that
   must never erode: **validated-plan-or-unsolvable as an actual return
   type** — no unverified plan crosses the API, and the current Chengdu
@@ -49,6 +53,16 @@ consumes).
   flows. Canonical LFE CT examples live in
   `/Users/oubiwann/lab/lfe/lfe/test/*SUITE.lfe`. Keep wolong test artifacts in
   the existing project test tree; do not create parallel test directories.
+- **LFE formatter:** the rebar3_lfe formatter command is
+  `rebar3 lfe format` (not `fmt`). Useful modes are
+  `rebar3 lfe format --check`, `rebar3 lfe format --dry-run`, and
+  `rebar3 lfe format --path <file-or-dir>`. Under the test profile,
+  `rebar3 as test lfe format --check` checks both `src` and `test` because
+  the test profile adds `test` to `src_dirs`. As of 2026-08-15, the existing
+  Wolong LFE tree is not formatter-normalized, so do not require formatter
+  green as a slice gate until a deliberate formatting sweep is opened and
+  committed. For now, use the formatter to inspect proposed changes or to
+  format files only when the slice explicitly owns that churn.
 - **Commit footer convention (operator override, 2026-08-07):** every future
   assistant-authored commit message includes these trailers:
   `Co-authored-by: Codex <noreply@openai.com>` and
