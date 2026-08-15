@@ -1,0 +1,37 @@
+# Slice 05 (wolong arc02): verification-boundary
+
+> Ledger per `LEDGER-DISCIPLINE.md` v2.0, Section A. All rows open at
+> slice start, 2026-08-15. Closer: CC. Verifier: CDC. Evidence must name the
+> commit where the row lands; CDC upgrades accepted `done` evidence from
+> attested to reproduced.
+
+## Ledger
+
+| ID | Criterion | Verify | Significance | Origin | Status | Evidence | Notes |
+|----|-----------|--------|--------------|--------|--------|----------|-------|
+| VB-1 | The current Chengdu 0.3.0 pre-release supported managed surfaces are surveyed from docs and local binaries before changing Wolong's public boundary. | inspect `../chengdu/docs/reference/cli.md`, `../chengdu/docs/managed-process.md`, and `ls -al ../chengdu/bin`; run `../chengdu/bin/pandapi-parser --help`, `../chengdu/bin/pandapi-grounder --help`, and `../chengdu/bin/pandapi-engine --help` if usable locally | serious | arc-plan OQ1 | open | | If a supported verifier surface is found, pause and report before implementing it. |
+| VB-2 | Arc02 OQ1 is dispositioned in `arc-plan.md` with a dated Version History entry naming slice05 as the source. | run separate `rg -n` checks for `OQ1`, `verification boundary`, `wolong:verify`, `slice05`, `Version history`, and the new version marker in `docs/design-v0.1.0/arc02-gate-pipeline/arc-plan.md` | serious | project-management bubble-up discipline | open | | The disposition must distinguish current support from historical five-gate context. |
+| VB-3 | `project-plan.md` states the 0.1.0 implemented public surface honestly: `validate`, `plan`, explicit verification-boundary metadata, and deferred `verify` unless a supported verifier contract exists. | run separate `rg -n` checks for `wolong:validate`, `wolong:plan`, `wolong:verify`, `verification-boundary`, `separate-verifier`, `deferred`, `re-entry`, and `Version history` in `docs/design-v0.1.0/project-plan.md` | serious | project DoD honesty | open | | Avoid silently deleting historical context; supersede or qualify it. |
+| VB-4 | `README.md` no longer claims the implemented sequence is parse -> ground -> solve -> convert -> verify. | run separate absence checks in `README.md` for the stale five-gate current-surface phrases `parse -> ground -> solve -> convert -> verify` and `parse` followed later by `convert` followed later by `verify` | serious | stale README finding | open | | Historical mentions are allowed only if explicitly marked historical/non-implemented. |
+| VB-5 | `README.md` reflects current project status and public API: `validate` and `plan` exist, `verify` is deferred, and arc02/arc03 status is current. | run separate positive checks in `README.md` for `wolong:validate`, `wolong:plan`, deferred `verify`, `verification-boundary`, `arc02`, `arc03`, and `provision`; run separate absence checks for stale `No plan`, `No validate`, and `arc01-exec-substrate in progress` wording | correctness | stale README finding | open | | The README should be useful for a new Wolong developer today. |
+| VB-6 | `README.md` and dev setup use current `pandapi-*` binary names and do not instruct users to use legacy `pandaPI*` names. | run separate positive checks in `README.md` for `pandapi-parser`, `pandapi-grounder`, and `pandapi-engine`; run separate absence checks for `pandaPIparser`, `pandaPIgrounder`, and `pandaPIengine` | correctness | binary rename correction | open | | Arc03 still owns release provisioning. |
+| VB-7 | Public solved plans still carry `verification-boundary.separate-verifier=not-run` and action/decomposition deferrals. | inspect `src/wolong.lfe`; run `rebar3 as test ct --suite test/wolong_plan_SUITE.lfe` and/or a new focused CT assertion | serious | slice03/slice04 invariant | open | | Preserve existing public `#(ok Plan)` shape. |
+| VB-8 | No public `wolong:verify` function or export lands on the deferral path. | run separate absence checks in `src` and `test` for `defun verify`, exported `verify`, and direct `wolong:verify`; inspect `src/wolong.lfe` export form | serious | arc-plan slice05 | open | | If a supported verifier contract is proven, this row must be amended before code lands. |
+| VB-9 | No action-sequence parser or decomposition-tree parser lands; current fields remain explicit deferrals. | inspect `src` and `test`; run separate `rg -n` checks for `action-sequence` and `decomposition-tree`; verify hits are only boundary metadata/assertions, not parser implementation | serious | slice03 deferral | open | | Durable engine payload stays as bytes/artifact metadata. |
+| VB-10 | No diagnostic-prose classifier lands; all planner outcome classification remains exit/status-field based. | run separate absence checks in `src` and `test` for `diagnostic prose`, `grep` over `stderr`, `stderr` prose matching, and `re:run` over `stderr`; inspect any hits | serious | managed-process contract | open | | Human diagnostics may remain captured as bounded metadata. |
+| VB-11 | No release provisioning, downloader, checksum verifier, hex packaging, or legacy binary fallback is added. | run separate absence checks for `download`, `provision`, `checksum`, `SHA256`, `hex.pm`, `pandaPIparser`, `pandaPIgrounder`, and `pandaPIengine` in `src`, `test`, and `README.md`; inspect this slice directory and verify any hits are out-of-scope prose only | serious | scope fence | open | | Planning prose may mention these as out of scope only; implementation must not add them. |
+| VB-12 | Existing public behavior remains green: solved, no-plan, typed failures, dispatch supervision, and parser-only validation still pass. | `rebar3 as test ct`; inspect `wolong_plan_SUITE`, `wolong_dispatch_SUITE`, and `wolong_parser_SUITE` output | serious | regression guard | open | | Do not weaken Slice03/Slice04 behavior while fixing docs. |
+| VB-13 | Local gates pass: `rebar3 compile`, `rebar3 as test eunit`, `rebar3 as test ct`, `rebar3 xref`, and `rebar3 dialyzer`. | run listed commands | correctness | repo workflow | open | | If formatter is used, keep formatting churn explicitly scoped. |
+| VB-14 | CI is green on Ubuntu and macOS for the implementation/close commits. | record GitHub Actions run URL and matrix results | correctness | repo workflow | open | | Remote CI uses Wolong fixtures, not sibling `../chengdu`. |
+| VB-15 | A tamper cycle proves the boundary checks are meaningful: make a verifier-claim regression, observe the owning test/grep fail nonzero, revert, and observe it pass. | tamper `separate-verifier` to a non-`not-run` value, add a dummy public `verify`, or reintroduce stale README five-gate wording; run the owning check; revert and rerun | correctness | ledger discipline | open | | Choose one tamper that directly exercises this slice's new protection. |
+| VB-16 | Closing report walks every ledger row and includes Bubble-up to the arc with OQ1 disposition, arc-close readiness, and scope-as-specified vs. scope-as-delivered. | run separate `rg -n` checks in `closing-report.md` for each row ID from `VB-1` through `VB-16`, plus `Bubble-up to the arc`, `OQ1`, `arc close`, and `scope-as-specified` | correctness | project-management | open | | CC writes `closing-report.md`; CDC writes `cdc-verification.md` later. |
+
+## What Worked
+
+_(At slice close. Patterns that made the slice close cleanly.)_
+
+## Closure
+
+Closed at commit `<pending>` on `<pending>`. Verified by: CC self-attested;
+CDC verification pending.
+Rows: 16. Done: 0. Deferred: 0. No-op: 0.
