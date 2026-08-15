@@ -146,6 +146,13 @@ managed-process binary.
 
 ## 6. Version history
 
+- **v1.4 - 2026-08-15 (surfaced by slice04).** Dispatch supervision is now
+  implemented with a permanent dispatch supervisor under `wolong-sup` and
+  temporary one-shot workers. Crash behavior is typed and isolated rather than
+  replayed: a crashed dispatch returns `#(error #(dispatch worker-exit Detail))`,
+  the supervisor remains alive for later dispatches, and concurrent success plus
+  timeout/failure cases are isolated. Slice05 must preserve the public
+  verification boundary and not infer verification from supervision.
 - **v1.3 - 2026-08-15 (surfaced by slice03).** OQ5 resolved with the first
   public `wolong:plan/3` shape: `#(ok Plan)` where `Plan` carries
   `outcome=solved`, durable engine plan payload bytes, plan artifact metadata,

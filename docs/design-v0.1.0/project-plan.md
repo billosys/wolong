@@ -112,11 +112,17 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 | W1 | On a clean machine with chengdu-released binaries, `(wolong:plan ...)` on the runbook's minimal pair returns `#(ok plan)` whose action sequence verifies, and the same call on the runbook's circular-precondition variant returns `#(unsolvable ...)` — the two return types demonstrated side by side. | reproduced |
 | W2 | A dispatch whose engine gate exceeds its timeout is killed (no surviving OS process) and returns a typed timeout error naming the gate. | reproduced |
 | W3 | Every gate failure mode from the current managed-process contracts maps to a typed result from exit code plus final machine status (`PANDAPI_STATUS` where available, including the engine no-plan status) — no failure collapses into a generic error or diagnostic-prose scrape. | reproduced via test suite |
-| W4 | The application's supervision tree restarts a crashed dispatch worker without taking down the app, and concurrent dispatches are isolated (one crash, others complete). | reproduced |
+| W4 | The application's supervision tree isolates a crashed one-shot dispatch worker without taking down the app, later dispatch workers can start normally, and concurrent dispatches are isolated (one crash or timeout does not corrupt another dispatch). | reproduced |
 | W5 | Published on hex.pm as `wolong`; a fresh rebar3 project adds it as a dep and reaches W1 following only the README. | reproduced |
 
 ## 5. Version history
 
+- **v1.3 — 2026-08-15 (surfaced by arc02 slice04).** W4 is clarified to match
+  the implemented OTP policy: dispatch workers are temporary one-shot children.
+  A crashed dispatch is isolated and typed rather than replayed; the supervision
+  tree remains alive and later dispatch workers start normally. Concurrent
+  dispatch isolation still covers one crash or timeout not corrupting another
+  dispatch.
 - **v1.2 — 2026-08-14 (surfaced by arc02 opening).** Arc02 is now open at
   `arc02-gate-pipeline/arc-plan.md`, with slice01
   `gate-contract-substrate` opened for CC. The roadmap line for arc02 is
