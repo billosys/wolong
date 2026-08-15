@@ -56,11 +56,22 @@
          (`#(ok ,grounder-detail)
           (case (wolong-gate:run-engine-to engine engine-output grounder-output config)
             (`#(ok ,engine-detail)
-             (finish `#(ok ,(map 'workspace workspace
-                                  'parser parser-detail
-                                  'grounder grounder-detail
-                                  'engine engine-detail))
-                     workspace config))
+             (case (attach-plan-payload engine-detail)
+               (`#(ok ,engine-with-payload)
+                (finish `#(ok ,(map 'workspace workspace
+                                     'parser parser-detail
+                                     'grounder grounder-detail
+                                     'engine engine-with-payload))
+                        workspace config))
+               (`#(error #(,reason ,payload-detail))
+                (finish `#(error
+                           #(engine ,reason
+                             ,(map 'workspace workspace
+                                   'parser parser-detail
+                                   'grounder grounder-detail
+                                   'engine engine-detail
+                                   'payload-error payload-detail)))
+                        workspace config))))
             (`#(domain-no-plan ,engine-detail)
              (finish `#(domain-no-plan
                         ,(map 'workspace workspace
@@ -89,6 +100,21 @@
                     ,(map 'workspace workspace
                           'parser parser-detail)))
                workspace config)))))
+
+(defun attach-plan-payload (engine-detail)
+  (let* ((artifact (maps:get 'artifact engine-detail))
+         (path (maps:get 'path artifact)))
+    (case (file:read_file path)
+      (`#(ok ,payload)
+       `#(ok ,(maps:put 'plan-payload
+                        (map 'bytes payload
+                             'byte-size (byte_size payload)
+                             'source 'engine-artifact
+                             'path path)
+                        engine-detail)))
+      (`#(error ,reason)
+       `#(error #(plan-payload-unavailable
+                  ,(map 'path path 'reason reason)))))))
 
 ;;; ----------------
 ;;; cleanup and result metadata
