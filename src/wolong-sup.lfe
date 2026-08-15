@@ -15,6 +15,14 @@
       intensity 5
       period 10))
 
+(defun dispatch-supervisor-spec ()
+  #M(id wolong-dispatch-sup
+     start #(wolong-dispatch-sup start_link ())
+     restart permanent
+     shutdown infinity
+     type supervisor
+     modules (wolong-dispatch-sup)))
+
 ;;; -------------------------
 ;;; supervisor implementation
 ;;; -------------------------
@@ -23,4 +31,4 @@
   (supervisor:start_link `#(local ,(server-name)) (MODULE) '()))
 
 (defun init (_args)
-  `#(ok #(,(sup-flags) ())))
+  `#(ok #(,(sup-flags) (,(dispatch-supervisor-spec)))))

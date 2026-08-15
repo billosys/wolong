@@ -1,7 +1,7 @@
 {application, wolong,
  [{description, "LFE/OTP supervision tree and typed API for the pandaPI HTN planning toolchain"},
   {vsn, "0.1.0"},
-  {registered, ['wolong-sup']},
+  {registered, ['wolong-sup', 'wolong-dispatch-sup']},
   {mod, {'wolong-app', []}},
   {applications, [kernel, stdlib, erlexec]},
   {env, []},

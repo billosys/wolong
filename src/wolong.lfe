@@ -13,7 +13,7 @@
 
 (defun plan (domain-path problem-path opts)
   (case (validate-plan-input domain-path problem-path opts)
-    ('ok (adapt-plan-result (wolong-pipeline:run domain-path problem-path)))
+    ('ok (adapt-plan-result (wolong-dispatch:run domain-path problem-path)))
     (err err)))
 
 (defun validate (domain-path problem-path)
@@ -24,7 +24,8 @@
 (defun adapt-plan-result
   ((`#(ok ,detail)) (public-solved-plan detail))
   ((`#(domain-no-plan ,detail)) `#(unsolvable ,detail))
-  ((`#(error #(,gate ,reason ,detail))) `#(error #(,gate ,reason ,detail))))
+  ((`#(error #(,gate ,reason ,detail))) `#(error #(,gate ,reason ,detail)))
+  ((err) err))
 
 (defun public-solved-plan (detail)
   (let* ((engine (maps:get 'engine detail))
@@ -38,6 +39,7 @@
                      'artifact (maps:get 'artifact engine)
                      'provenance (plan-provenance detail)
                      'workspace (maps:get 'workspace detail)
+                     'dispatch (maps:get 'dispatch detail 'undefined)
                      'verification-boundary (verification-boundary)))))))
 
 (defun plan-provenance (detail)

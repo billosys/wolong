@@ -1,0 +1,9 @@
+(define (domain wolong-slow-success)
+  (:requirements :typing)
+  (:types item)
+  (:predicates (ready))
+  ;; force-slow-success
+  (:action mark-ready
+    :parameters ()
+    :precondition ()
+    :effect (ready)))

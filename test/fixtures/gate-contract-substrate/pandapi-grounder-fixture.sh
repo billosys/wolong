@@ -46,6 +46,16 @@ elif grep -q 'unsolvable' "$input"; then
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
+elif grep -q 'engine-timeout' "$input"; then
+    printf 'fixture grounder artifact\nengine-timeout\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'slow-success' "$input"; then
+    printf 'fixture grounder artifact\nslow-success\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
 else
     printf 'fixture grounder artifact\n' >"$output" || {
         status output_unavailable 21 caller_error absent path_role=output operation=open

@@ -1,0 +1,5 @@
+(define (problem wolong-engine-timeout-problem)
+  (:domain wolong-engine-timeout)
+  (:objects)
+  (:init)
+  (:goal (ready)))

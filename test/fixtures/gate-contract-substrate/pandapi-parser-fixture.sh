@@ -47,6 +47,16 @@ elif grep -q 'force-engine-invalid' "$domain"; then
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
+elif grep -q 'force-engine-timeout' "$domain"; then
+    printf 'fixture parser artifact\nengine-timeout\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-slow-success' "$domain"; then
+    printf 'fixture parser artifact\nslow-success\n' >"$output" || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
 elif grep -q 'wolong-unsolvable' "$domain"; then
     printf 'fixture parser artifact\nunsolvable\n' >"$output" || {
         status output_unavailable 21 caller_error absent path_role=output operation=open

@@ -1,0 +1,5 @@
+(define (problem wolong-slow-success-problem)
+  (:domain wolong-slow-success)
+  (:objects)
+  (:init)
+  (:goal (ready)))

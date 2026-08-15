@@ -42,6 +42,18 @@ if grep -q 'unsolvable' "$input"; then
     exit 2
 fi
 
+if grep -q 'engine-timeout' "$input"; then
+    printf '%s\n' "$$" >"$output_dir/engine-timeout.pid"
+    printf 'before-timeout\n'
+    printf 'stderr-before-timeout\n' >&2
+    trap '' TERM
+    sleep 30
+fi
+
+if grep -q 'slow-success' "$input"; then
+    sleep 1
+fi
+
 printf 'fixture engine plan\n' >"$output" || {
     status output_unavailable 21 caller_error absent path_role=output operation=open
     exit 21

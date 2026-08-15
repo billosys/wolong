@@ -1,0 +1,9 @@
+(define (domain wolong-engine-timeout)
+  (:requirements :typing)
+  (:types item)
+  (:predicates (ready))
+  ;; force-engine-timeout
+  (:action mark-ready
+    :parameters ()
+    :precondition ()
+    :effect (ready)))
