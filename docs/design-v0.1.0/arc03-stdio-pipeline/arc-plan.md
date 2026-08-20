@@ -108,7 +108,8 @@ pipeline slices stay reviewable.
   and implement input stdin for the supported parser, grounder, and engine
   surfaces, including unambiguous parser role semantics for two HDDL inputs, or
   the project must explicitly rescope Arc03 to a file-input plus stdout-artifact
-  temporary-file bridge.
+  temporary-file bridge. Chengdu-facing handoff:
+  `chengdu-stdin-contract-blocker.md`.
 
 ## 5. Arc ledger
 
