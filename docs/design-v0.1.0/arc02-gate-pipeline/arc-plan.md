@@ -9,10 +9,10 @@ Roadmap line: *The supervised pandaPI gate pipeline exposes the public
 planning API without allowing an unverified solved plan or a valid no-plan
 outcome to collapse into generic failure.*
 
-Expanded: this arc builds on arc01's process substrate and turns the current
-Chengdu 0.3.0 managed-process surface into Wolong's planning boundary. The
-supported external process chain for this arc is the current documented
-`pandapi-*` sequence:
+Expanded: this arc builds on arc01's process substrate and turns the
+file-backed Chengdu 0.3.0 managed-process surface into Wolong's first planning
+boundary. The supported external process chain for this arc is the current
+documented `pandapi-*` sequence:
 
 ```text
 pandapi-parser -> pandapi-grounder -> pandapi-engine
@@ -25,6 +25,12 @@ run becomes a success-shaped planning result. Engine `domain_no_plan` with
 exit `2` becomes `#(unsolvable ...)`, not `#(error ...)`. Parser, grounder,
 engine, binary, output, timeout, and unmapped-status failures return typed
 errors naming the gate.
+
+Arc close surfaced an important release-readiness gap: this arc does not prove
+the stdio-capable Chengdu 0.3.0 process contract. Wolong cannot release until
+it can drive the real `pandapi-*` binaries through their supported
+stdin/stdout/stderr behavior under erlexec. That work is routed to
+`../arc03-stdio-pipeline/` before provisioning.
 
 This arc also reconciles an inherited project-plan tension. Older Wolong
 planning prose described a five-gate parse/ground/solve/convert/verify flow,
@@ -82,9 +88,19 @@ managed-process binary.
   to vendor or model Wolong-owned tests. Remote CI must not depend on the
   sibling checkout.
 
-**Leaves for arc03:**
+**Leaves for arc03 (`stdio-pipeline`):**
 
-- No binary download or release provisioning. Arc03 still owns fetching,
+- No stdio/piped process implementation. Arc02 uses file-backed artifacts and
+  bounded diagnostic capture; Arc03 owns stdin writing, stdout artifact
+  capture/streaming, status-stream separation, and erlexec deadlock/backpressure
+  proof against real Chengdu 0.3.0 binaries.
+- No release-readiness claim. Arc02's fixture-backed CI and local real-binary
+  file-artifact probes are honest substrate evidence, not a substitute for the
+  release-grade stdio pipeline.
+
+**Leaves for arc04 (`provisioning`):**
+
+- No binary download or release provisioning. Arc04 owns fetching,
   checksums, release artifact layout, and clean-machine installation.
 - No dependency on unreleased Chengdu artifacts in CI. Arc02 may use checked-in
   fixture executables when CI cannot run real Chengdu binaries, but must keep
@@ -147,10 +163,18 @@ managed-process binary.
 | A5 | Engine-scale timeout cleanup leaves no surviving OS process and the application can recover for a subsequent dispatch. | reproduced |
 | A6 | Concurrent dispatches are isolated under OTP supervision: one failing or timing-out dispatch does not take down the app or corrupt another dispatch's artifacts/results. | reproduced |
 | A7 | The public API surface at arc close is honest: `wolong:validate` remains parser validation, `wolong:plan` returns solved/unsolvable/typed gate errors, and `wolong:verify` is either implemented against a supported contract or explicitly deferred with project-plan/README wording that prevents false confidence. | attested by review; reproduced for callable APIs |
-| A8 | Local gates and remote CI are green: `rebar3 compile`, `rebar3 as test eunit`, `rebar3 as test ct`, `rebar3 xref`, and `rebar3 dialyzer`; any unavailable real Chengdu binary evidence is recorded as a deferral owned by arc03. | reproduced |
+| A8 | Local gates and remote CI are green: `rebar3 compile`, `rebar3 as test eunit`, `rebar3 as test ct`, `rebar3 xref`, and `rebar3 dialyzer`; unavailable real Chengdu stdio evidence is owned by arc03, and release provisioning evidence is owned by arc04. | reproduced |
 
 ## 6. Version history
 
+- **v1.6 - 2026-08-20 (surfaced by arc02 close readiness review).** Arc02's
+  five slices are CDC-closed, but arc-level composition against the project
+  release gate found a gap: Arc02 proves file-backed supervised gate execution
+  and honest verification-boundary metadata, not the required stdio/piped
+  Chengdu 0.3.0 process contract. The project roadmap now inserts
+  `arc03-stdio-pipeline` before provisioning. The former provisioning arc moves
+  to Arc04. Arc02 should not be used as release-readiness evidence for W1 until
+  Arc03 proves real `pandapi-*` stdin/stdout/stderr behavior under erlexec.
 - **v1.5 - 2026-08-15 (surfaced by slice05).** OQ1 is resolved by explicit
   deferral. The Chengdu 0.3.0 survey found supported managed surfaces for
   `pandapi-parser`, `pandapi-grounder`, and `pandapi-engine`, but no supported
