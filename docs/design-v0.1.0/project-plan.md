@@ -108,7 +108,7 @@ consumer side of chengdu's provenance manifest.
 - **arc01 — closed 2026-08-14.** `arc01-exec-substrate/closing-report.md`
   closes the substrate arc with local gates, real `pandapi-parser` evidence,
   and CI fixture coverage.
-- **arc02 — open 2026-08-14.** Detailed plan:
+- **arc02 — closed 2026-08-20.** Detailed plan:
   `arc02-gate-pipeline/arc-plan.md`. The arc opens from arc01's bubble-ups:
   current managed `PANDAPI_STATUS` classification, parser invalidity as
   `invalid-kind=undistinguished`, app-env-only binary lookup, and stream-to-
