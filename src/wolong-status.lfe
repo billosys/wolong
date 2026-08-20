@@ -7,9 +7,12 @@
 ;;; ----------------
 
 (defun parse (stderr)
-  (case (find-final-status-line (binary:split stderr #b("\n") '(global)) 'undefined)
-    ('undefined `#(error missing-status-line))
-    (line `#(ok ,(parse-status-fields (status-payload line))))))
+  (case (find-final-status-line (binary:split stderr #b("\n") '(global))
+                                'undefined)
+    ('undefined
+     `#(error missing-status-line))
+    (line
+     `#(ok ,(parse-status-fields (status-payload line))))))
 
 ;;; ----------------
 ;;; PANDAPI_STATUS parser
@@ -19,8 +22,10 @@
   (('() acc) acc)
   ((`(,line . ,rest) acc)
    (case (status-line? line)
-     ('true (find-final-status-line rest line))
-     ('false (find-final-status-line rest acc)))))
+     ('true
+      (find-final-status-line rest line))
+     ('false
+      (find-final-status-line rest acc)))))
 
 (defun status-line? (line)
   (case (binary:match line #b("PANDAPI_STATUS\t"))
@@ -44,7 +49,8 @@
                                  (maps:put mapped-key
                                            (field-value mapped-key value)
                                            acc))))
-     (_ (parse-status-field-list rest acc)))))
+     (_
+      (parse-status-field-list rest acc)))))
 
 (defun field-key
   ((#b("status")) 'status)
@@ -61,11 +67,14 @@
   ((key) key))
 
 (defun field-value
-  (('exit-code value) (parse-integer value))
+  (('exit-code value)
+   (parse-integer value))
   ((_key value) value))
 
 (defun parse-integer (value)
   (case (string:to_integer (binary_to_list value))
     (`#(,integer ())
-     (if (is_integer integer) integer value))
+     (if (is_integer integer)
+       integer
+       value))
     (_ value)))

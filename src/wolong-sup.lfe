@@ -1,8 +1,8 @@
 (defmodule wolong-sup
   (behaviour supervisor)
   (export
-   (start_link 0)
-   (init 1)))
+   (init 1)
+   (start_link 0)))
 
 ;;; ----------------
 ;;; config functions
@@ -12,8 +12,8 @@
 
 (defun sup-flags ()
   `#M(strategy one_for_one
-      intensity 5
-      period 10))
+               intensity 5
+               period 10))
 
 (defun dispatch-supervisor-spec ()
   #M(id wolong-dispatch-sup

@@ -6,9 +6,14 @@
   (let ((ref (make_ref)))
     (case (whereis 'wolong-dispatch-sup)
       ('undefined
-       `#(error #(dispatch supervisor-unavailable ,(map 'supervisor 'wolong-dispatch-sup))))
+       `#(error
+          #(dispatch supervisor-unavailable
+                     ,(map 'supervisor 'wolong-dispatch-sup))))
       (_sup-pid
-       (case (wolong-dispatch-sup:start-dispatch (self) ref domain-path problem-path)
+       (case (wolong-dispatch-sup:start-dispatch (self)
+                                                 ref
+                                                 domain-path
+                                                 problem-path)
          (`#(ok ,pid)
           (let ((mon-ref (erlang:monitor 'process pid)))
             (wait-for-result ref pid mon-ref)))
@@ -16,8 +21,9 @@
           (let ((mon-ref (erlang:monitor 'process pid)))
             (wait-for-result ref pid mon-ref)))
          (`#(error ,reason)
-          `#(error #(dispatch start-failed ,(map 'supervisor 'wolong-dispatch-sup
-                                                 'reason reason)))))))))
+          `#(error
+             #(dispatch start-failed
+                        ,(map 'supervisor 'wolong-dispatch-sup 'reason reason)))))))))
 
 (defun wait-for-result (ref pid mon-ref)
   (receive
@@ -43,5 +49,4 @@
    `#(domain-no-plan ,(maps:put 'dispatch dispatch detail)))
   ((`#(error #(,gate ,reason ,detail)) dispatch)
    `#(error #(,gate ,reason ,(maps:put 'dispatch dispatch detail))))
-  ((other _dispatch)
-   other))
+  ((other _dispatch) other))

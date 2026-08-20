@@ -13,34 +13,41 @@
 
 (defun plan (domain-path problem-path opts)
   (case (validate-plan-input domain-path problem-path opts)
-    ('ok (adapt-plan-result (wolong-dispatch:run domain-path problem-path)))
+    ('ok
+     (adapt-plan-result (wolong-dispatch:run domain-path problem-path)))
     (err err)))
 
 (defun validate (domain-path problem-path)
   (case (validate-path-args domain-path problem-path)
-    ('ok (validate-paths domain-path problem-path))
+    ('ok
+     (validate-paths domain-path problem-path))
     (err err)))
 
 (defun adapt-plan-result
-  ((`#(ok ,detail)) (public-solved-plan detail))
-  ((`#(domain-no-plan ,detail)) `#(unsolvable ,detail))
-  ((`#(error #(,gate ,reason ,detail))) `#(error #(,gate ,reason ,detail)))
+  ((`#(ok ,detail))
+   (public-solved-plan detail))
+  ((`#(domain-no-plan ,detail))
+   `#(unsolvable ,detail))
+  ((`#(error #(,gate ,reason ,detail)))
+   `#(error #(,gate ,reason ,detail)))
   ((err) err))
 
 (defun public-solved-plan (detail)
   (let* ((engine (maps:get 'engine detail))
-         (payload (maps:get 'plan-payload engine 'undefined)))
+          (payload (maps:get 'plan-payload engine 'undefined)))
     (case payload
       ('undefined
        `#(error #(engine plan-payload-missing ,detail)))
-      (_ `#(ok ,(map 'outcome 'solved
-                     'payload (maps:get 'bytes payload)
-                     'payload-bytes (maps:get 'byte-size payload)
-                     'artifact (maps:get 'artifact engine)
-                     'provenance (plan-provenance detail)
-                     'workspace (maps:get 'workspace detail)
-                     'dispatch (maps:get 'dispatch detail 'undefined)
-                     'verification-boundary (verification-boundary)))))))
+      (_
+       `#(ok
+          ,(map 'outcome 'solved
+                'payload (maps:get 'bytes payload)
+                'payload-bytes (maps:get 'byte-size payload)
+                'artifact (maps:get 'artifact engine)
+                'provenance (plan-provenance detail)
+                'workspace (maps:get 'workspace detail)
+                'dispatch (maps:get 'dispatch detail 'undefined)
+                'verification-boundary (verification-boundary)))))))
 
 (defun plan-provenance (detail)
   (map 'parser (maps:get 'parser detail)
@@ -62,7 +69,7 @@
      (case (wolong-binaries:parser)
        (`#(ok ,parser)
         (adapt-parser-result
-         (wolong-gate:run-parser parser domain-path problem-path config)))
+          (wolong-gate:run-parser parser domain-path problem-path config)))
        (err err)))
     (err err)))
 
@@ -71,7 +78,8 @@
 ;;; ----------------
 
 (defun adapt-parser-result
-  ((`#(ok ,detail)) `#(ok ,detail))
+  ((`#(ok ,detail))
+   `#(ok ,detail))
   ((`#(error #(input-unavailable ,detail)))
    `#(error #(missing-file ,detail)))
   ((`#(error #(output-unavailable ,detail)))
@@ -96,28 +104,32 @@
 
 (defun validate-plan-input (domain-path problem-path opts)
   (case (validate-path-args domain-path problem-path)
-    ('ok (validate-plan-opts opts))
+    ('ok
+     (validate-plan-opts opts))
     (err err)))
 
 (defun validate-plan-opts
   ((opts) (when (is_map opts))
    (case (maps:size opts)
      (0 'ok)
-     (_ `#(error #(opts unsupported-option
-                   ,(map 'supported '(#M() ())
-                         'received opts))))))
+     (_
+      `#(error
+         #(opts unsupported-option
+                ,(map 'supported
+                      '(#M() ())
+                      'received opts))))))
   (('()) 'ok)
   ((opts)
-   `#(error #(opts invalid-argument
-              ,(map 'expected '(empty-map empty-list)
-                    'received opts)))))
+   `#(error
+      #(opts invalid-argument
+             ,(map 'expected '(empty-map empty-list) 'received opts)))))
 
 (defun validate-path-args (domain-path problem-path)
   (if (not (path-string? domain-path))
-      `#(error #(invalid-argument domain-path ,domain-path))
-      (if (not (path-string? problem-path))
-          `#(error #(invalid-argument problem-path ,problem-path))
-          'ok)))
+    `#(error #(invalid-argument domain-path ,domain-path))
+    (if (not (path-string? problem-path))
+      `#(error #(invalid-argument problem-path ,problem-path))
+      'ok)))
 
 (defun path-string? (path)
   (orelse (is_binary path)

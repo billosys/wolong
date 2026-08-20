@@ -18,41 +18,44 @@
 
 (defun validate-input (command args opts)
   (if (not (is-command command))
-      `#(error #(exec invalid-command ,command))
-      (if (not (is-args args))
-          `#(error #(exec invalid-args ,args))
-          (validate-opts command args opts))))
+    `#(error #(exec invalid-command ,command))
+    (if (not (is-args args))
+      `#(error #(exec invalid-args ,args))
+      (validate-opts command args opts))))
 
 (defun validate-opts (command args opts)
   (if (not (is_map opts))
-      `#(error #(exec invalid-options ,opts))
-      (let ((timeout-ms (maps:get 'timeout-ms opts 'undefined))
-            (kill-timeout-sec (maps:get 'kill-timeout-sec opts 'undefined))
-            (output-limit-bytes (maps:get 'output-limit-bytes opts 'undefined)))
-        (if (not (positive-integer timeout-ms))
-            `#(error #(exec invalid-options timeout-ms))
-            (if (not (non-negative-integer kill-timeout-sec))
-                `#(error #(exec invalid-options kill-timeout-sec))
-                (if (not (positive-integer output-limit-bytes))
-                    `#(error #(exec invalid-options output-limit-bytes))
-                    (case (resolve-command command)
-                      (`#(ok ,resolved-command)
-                       `#(ok #M(command ,resolved-command
-                                args ,args
-                                timeout-ms ,timeout-ms
-                                kill-timeout-sec ,kill-timeout-sec
-                                output-limit-bytes ,output-limit-bytes)))
-                      (err err))))))))
+    `#(error #(exec invalid-options ,opts))
+    (let ((timeout-ms (maps:get 'timeout-ms opts 'undefined))
+           (kill-timeout-sec (maps:get 'kill-timeout-sec opts 'undefined))
+           (output-limit-bytes (maps:get 'output-limit-bytes opts 'undefined)))
+      (if (not (positive-integer timeout-ms))
+        `#(error #(exec invalid-options timeout-ms))
+        (if (not (non-negative-integer kill-timeout-sec))
+          `#(error #(exec invalid-options kill-timeout-sec))
+          (if (not (positive-integer output-limit-bytes))
+            `#(error #(exec invalid-options output-limit-bytes))
+            (case (resolve-command command)
+              (`#(ok ,resolved-command)
+               `#(ok
+                  #M(command ,resolved-command
+                             args ,args
+                             timeout-ms ,timeout-ms
+                             kill-timeout-sec ,kill-timeout-sec
+                             output-limit-bytes ,output-limit-bytes)))
+              (err err))))))))
 
 (defun resolve-command (command)
   (let ((command-list (unicode:characters_to_list command)))
     (if (path-like-command command-list)
-        (if (filelib:is_file command-list)
-            `#(ok ,command)
-            `#(error #(exec command-not-found ,command)))
-        (case (os:find_executable command-list)
-          ('false `#(error #(exec command-not-found ,command)))
-          (resolved `#(ok ,resolved))))))
+      (if (filelib:is_file command-list)
+        `#(ok ,command)
+        `#(error #(exec command-not-found ,command)))
+      (case (os:find_executable command-list)
+        ('false
+         `#(error #(exec command-not-found ,command)))
+        (resolved
+         `#(ok ,resolved))))))
 
 (defun path-like-command (command-list)
   (=/= command-list (filename:basename command-list)))
@@ -79,23 +82,30 @@
 
 (defun run-valid (validated)
   (let* ((command (maps:get 'command validated))
-         (args (maps:get 'args validated))
-         (timeout-ms (maps:get 'timeout-ms validated))
-         (kill-timeout-sec (maps:get 'kill-timeout-sec validated))
-         (output-limit-bytes (maps:get 'output-limit-bytes validated))
-         (argv (cons command args))
-         (options (list 'monitor 'stdout 'stderr 'kill_group
-                        (tuple 'group 0)
-                        (tuple 'kill_timeout kill-timeout-sec)))
-         (started-at (now-ms)))
+          (args (maps:get 'args validated))
+          (timeout-ms (maps:get 'timeout-ms validated))
+          (kill-timeout-sec (maps:get 'kill-timeout-sec validated))
+          (output-limit-bytes (maps:get 'output-limit-bytes validated))
+          (argv (cons command args))
+          (options
+            (list 'monitor 'stdout 'stderr 'kill_group
+                  (tuple 'group 0)
+                  (tuple 'kill_timeout kill-timeout-sec)))
+          (started-at (now-ms)))
     (case (exec:run argv options)
       (`#(ok ,pid ,os-pid)
-       (collect-until-exit pid os-pid timeout-ms kill-timeout-sec output-limit-bytes
+       (collect-until-exit pid os-pid timeout-ms kill-timeout-sec
+                           output-limit-bytes
                            (empty-capture output-limit-bytes) started-at))
       (`#(error ,reason)
        `#(error #(exec start-failed ,reason))))))
 
-(defun collect-until-exit (pid os-pid timeout-ms kill-timeout-sec limit capture started-at)
+(defun collect-until-exit (pid os-pid
+                               timeout-ms
+                               kill-timeout-sec
+                               limit
+                               capture
+                               started-at)
   (let ((remaining (remaining-ms started-at timeout-ms)))
     (receive
       (`#(stdout ,os-pid ,data)
@@ -109,10 +119,12 @@
       (`#(DOWN ,os-pid process ,pid #(exit_status ,status))
        (case (exec:status status)
          (`#(status 127)
-          `#(error #(exec command-not-found #M(os-pid ,os-pid
-                                               stdout ,(maps:get 'stdout capture)
-                                               stderr ,(maps:get 'stderr capture)
-                                               duration-ms ,(- (now-ms) started-at)))))
+          `#(error
+             #(exec command-not-found
+                    #M(os-pid ,os-pid
+                              stdout ,(maps:get 'stdout capture)
+                              stderr ,(maps:get 'stderr capture)
+                              duration-ms ,(- (now-ms) started-at)))))
          (`#(status ,exit-status)
           `#(ok ,(completed-result exit-status os-pid capture started-at)))
          (`#(signal ,signal ,core)
@@ -122,40 +134,59 @@
 
 (defun timeout-process (pid os-pid kill-timeout-sec limit capture started-at)
   (let ((kill-result (exec:stop pid))
-        (wait-ms (+ (* kill-timeout-sec 1000) 2000)))
+         (wait-ms (+ (* kill-timeout-sec 1000) 2000)))
     (wait-after-timeout pid os-pid kill-timeout-sec limit capture started-at
                         kill-result wait-ms)))
 
-(defun wait-after-timeout (pid os-pid kill-timeout-sec limit capture started-at kill-result wait-ms)
+(defun wait-after-timeout (pid os-pid
+                               kill-timeout-sec
+                               limit
+                               capture
+                               started-at
+                               kill-result
+                               wait-ms)
   (receive
     (`#(stdout ,os-pid ,data)
      (wait-after-timeout pid os-pid kill-timeout-sec limit
-                         (capture-output 'stdout data capture) started-at kill-result wait-ms))
+                         (capture-output 'stdout data capture) started-at
+                         kill-result wait-ms))
     (`#(stderr ,os-pid ,data)
      (wait-after-timeout pid os-pid kill-timeout-sec limit
-                         (capture-output 'stderr data capture) started-at kill-result wait-ms))
+                         (capture-output 'stderr data capture) started-at
+                         kill-result wait-ms))
     (`#(DOWN ,os-pid process ,pid ,reason)
-     `#(timeout ,(timeout-result os-pid capture started-at kill-timeout-sec
-                                 kill-result reason 'false)))
+     `#(timeout
+        ,(timeout-result os-pid capture started-at kill-timeout-sec
+                         kill-result reason 'false)))
     (after wait-ms
       (let ((sigkill-result (exec:kill pid 'sigkill)))
-        (wait-after-sigkill pid os-pid kill-timeout-sec limit capture started-at
+        (wait-after-sigkill pid os-pid kill-timeout-sec limit capture
+                            started-at
                             `#(,kill-result ,sigkill-result))))))
 
-(defun wait-after-sigkill (pid os-pid kill-timeout-sec limit capture started-at kill-result)
+(defun wait-after-sigkill (pid os-pid
+                               kill-timeout-sec
+                               limit
+                               capture
+                               started-at
+                               kill-result)
   (receive
     (`#(stdout ,os-pid ,data)
      (wait-after-sigkill pid os-pid kill-timeout-sec limit
-                         (capture-output 'stdout data capture) started-at kill-result))
+                         (capture-output 'stdout data capture) started-at
+                         kill-result))
     (`#(stderr ,os-pid ,data)
      (wait-after-sigkill pid os-pid kill-timeout-sec limit
-                         (capture-output 'stderr data capture) started-at kill-result))
+                         (capture-output 'stderr data capture) started-at
+                         kill-result))
     (`#(DOWN ,os-pid process ,pid ,reason)
-     `#(timeout ,(timeout-result os-pid capture started-at kill-timeout-sec
-                                 kill-result reason 'true)))
+     `#(timeout
+        ,(timeout-result os-pid capture started-at kill-timeout-sec
+                         kill-result reason 'true)))
     (after 1000
-      `#(timeout ,(timeout-result os-pid capture started-at kill-timeout-sec
-                                  kill-result 'kill-timeout 'true)))))
+      `#(timeout
+         ,(timeout-result os-pid capture started-at kill-timeout-sec
+                          kill-result 'kill-timeout 'true)))))
 
 ;;; ----------------
 ;;; output capture
@@ -172,26 +203,27 @@
 
 (defun capture-output (stream data capture)
   (let* ((bytes-key (stream-key stream 'bytes))
-         (data-key stream)
-         (truncated-key (stream-key stream 'truncated))
-         (limit (maps:get 'output-limit-bytes capture))
-         (captured (maps:get bytes-key capture))
-         (incoming (byte_size data))
-         (new-observed (+ captured incoming))
-         (remaining (- limit captured))
-         (new-data (append-capped (maps:get data-key capture) data remaining))
-         (truncated (orelse (maps:get truncated-key capture) (> new-observed limit))))
+          (data-key stream)
+          (truncated-key (stream-key stream 'truncated))
+          (limit (maps:get 'output-limit-bytes capture))
+          (captured (maps:get bytes-key capture))
+          (incoming (byte_size data))
+          (new-observed (+ captured incoming))
+          (remaining (- limit captured))
+          (new-data (append-capped (maps:get data-key capture) data remaining))
+          (truncated
+            (orelse (maps:get truncated-key capture) (> new-observed limit))))
     (maps:put truncated-key truncated
               (maps:put bytes-key new-observed
                         (maps:put data-key new-data capture)))))
 
 (defun append-capped (current data remaining)
   (if (=< remaining 0)
-      current
-      (let ((take (erlang:min remaining (byte_size data))))
-        (if (=:= take (byte_size data))
-            (iolist_to_binary (list current data))
-            (iolist_to_binary (list current (binary:part data 0 take)))))))
+    current
+    (let ((take (erlang:min remaining (byte_size data))))
+      (if (=:= take (byte_size data))
+        (iolist_to_binary (list current data))
+        (iolist_to_binary (list current (binary:part data 0 take)))))))
 
 (defun stream-key
   (('stdout 'bytes) 'stdout-bytes)
@@ -205,8 +237,7 @@
 
 (defun completed-result (exit-status os-pid capture started-at)
   (maps:merge (base-result os-pid capture started-at)
-              (map 'exit-status exit-status
-                   'timed-out 'false)))
+              (map 'exit-status exit-status 'timed-out 'false)))
 
 (defun signaled-result (signal core os-pid capture started-at)
   (maps:merge (base-result os-pid capture started-at)
@@ -215,7 +246,12 @@
                    'core-dump core
                    'timed-out 'false)))
 
-(defun timeout-result (os-pid capture started-at kill-timeout-sec kill-result reason escalated)
+(defun timeout-result (os-pid capture
+                              started-at
+                              kill-timeout-sec
+                              kill-result
+                              reason
+                              escalated)
   (maps:merge (base-result os-pid capture started-at)
               (map 'exit-status 'undefined
                    'timed-out 'true
@@ -236,8 +272,7 @@
        'stdout-truncated (maps:get 'stdout-truncated capture)
        'stderr-truncated (maps:get 'stderr-truncated capture)))
 
-(defun now-ms ()
-  (erlang:monotonic_time 'millisecond))
+(defun now-ms () (erlang:monotonic_time 'millisecond))
 
 (defun remaining-ms (started-at timeout-ms)
   (erlang:max 0 (- timeout-ms (- (now-ms) started-at))))
