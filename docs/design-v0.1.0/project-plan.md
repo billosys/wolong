@@ -122,12 +122,15 @@ consumer side of chengdu's provenance manifest.
   but arc-level release composition surfaced a gap: Arc02 proves a
   fixture-backed/file-artifact pipeline, not the stdio pipeline required for
   Wolong release readiness.
-- **arc03 — open 2026-08-20.** Detailed plan:
-  `arc03-stdio-pipeline/arc-plan.md`. This arc is inserted before provisioning
-  to prove and implement the Chengdu 0.3.0 stdin/stdout/stderr contract under
-  erlexec. Slice01 is investigation-first with an explicit stop condition: if
-  Chengdu is missing or buggy for the required piped process contract, pause
-  Wolong and route the finding to Chengdu.
+- **arc03 — paused 2026-08-20.** Detailed plan:
+  `arc03-stdio-pipeline/arc-plan.md`. Slice01 proved that current Chengdu
+  0.3.0 local binaries support artifact stdout with status on stderr, but do
+  not support `-` as an input path for parser, grounder, or engine. Arc03 is
+  therefore Chengdu-blocked before stdio-runner implementation. Re-entry
+  requires Chengdu to document and implement input stdin for the supported
+  parser, grounder, and engine surfaces, including parser role semantics for
+  two HDDL inputs, or an explicit Wolong rescope to a file-input plus
+  stdout-artifact temporary-file bridge.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -148,6 +151,14 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.6 - 2026-08-20 (surfaced by arc03 slice01).** Arc03 Slice01 classifies
+  the release-grade stdin pipeline as Chengdu-blocked. The current Chengdu
+  0.3.0 docs/binaries support `--output -` artifact stdout with final
+  `PANDAPI_STATUS` on stderr, and reject stdout/status ownership conflicts, but
+  reject input path `-` for parser, grounder, and engine. Wolong pauses Arc03
+  implementation until Chengdu supplies a documented input-stdin contract for
+  the three supported components, or this project explicitly rescopes the arc
+  to file inputs with stdout-artifact temporary-file bridging.
 - **v1.5 - 2026-08-20 (surfaced by arc02 close readiness review).** Arc02's
   five slices are CDC-closed, but its evidence is not release-sufficient for
   Wolong: it proves a supervised, typed, fixture-backed/file-artifact pipeline,

@@ -54,7 +54,9 @@ for the full definition of done, non-goals, and arc roadmap.
 **Pre-alpha.** `arc01-exec-substrate` is closed. `arc02-gate-pipeline` has
 implemented parser/grounder/engine gate classification, workspaces, public
 planning, dispatch supervision, and the explicit verification-boundary
-disposition. `arc03-provisioning` is still future work.
+disposition. `arc03-stdio-pipeline` is paused because current Chengdu 0.3.0
+local binaries do not support input path `-` for parser, grounder, or engine.
+`arc04-provisioning` is still future work.
 
 Remote CI uses Wolong-owned fixtures and does not depend on a sibling Chengdu
 checkout.
@@ -75,7 +77,7 @@ config map at:
 ```
 
 Release download, checksum verification, and clean-machine binary provisioning
-belong to Arc03. Until then, manual binary placement is a development setup
+belong to Arc04. Until then, manual binary placement is a development setup
 step, not a Wolong runtime dependency.
 
 Build and test locally:
