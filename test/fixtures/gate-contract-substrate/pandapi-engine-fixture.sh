@@ -23,11 +23,35 @@ usage_error() {
 
 output="$4"
 input="$5"
-output_dir=$(dirname "$output")
-: >"$output_dir/engine.invoked"
+scratch=$(mktemp)
+trap 'rm -f "$scratch"' EXIT
+
+if [ "$output" != "-" ]; then
+    output_dir=$(dirname "$output")
+    : >"$output_dir/engine.invoked"
+fi
+
+write_artifact() {
+    if [ "$output" = "-" ]; then
+        cat
+    else
+        cat >"$output"
+    fi
+}
+
+if [ "$input" = "-" ]; then
+    cat >"$scratch" || {
+        status input_unavailable 20 caller_error absent path=- path_role=engine_input operation=read
+        exit 20
+    }
+    input="$scratch"
+    input_fields="path=- path_role=engine_input operation=read"
+else
+    input_fields="path_role=input operation=open"
+fi
 
 if [ ! -r "$input" ]; then
-    status input_unavailable 20 caller_error absent path_role=input operation=open
+    status input_unavailable 20 caller_error absent $input_fields
     exit 20
 fi
 
@@ -38,12 +62,11 @@ fi
 
 if grep -q 'unsolvable' "$input"; then
     printf 'pandapi-engine: search completed with no plan\n' >&2
-    status domain_no_plan 2 expected_domain_outcome absent outcome=no_plan
+    status domain_no_plan 2 expected_domain_outcome absent outcome=no_plan $input_fields
     exit 2
 fi
 
 if grep -q 'engine-timeout' "$input"; then
-    printf '%s\n' "$$" >"$output_dir/engine-timeout.pid"
     printf 'before-timeout\n'
     printf 'stderr-before-timeout\n' >&2
     trap '' TERM
@@ -54,10 +77,25 @@ if grep -q 'slow-success' "$input"; then
     sleep 1
 fi
 
-printf 'fixture engine plan\n' >"$output" || {
+if grep -q 'engine-output-flood' "$input"; then
+    i=0
+    while [ "$i" -lt 70000 ]; do
+        printf 'x'
+        i=$((i + 1))
+    done
+    printf 'bounded stderr diagnostic\n' >&2
+    status ok 0 success complete artifact=stdout outcome=solved $input_fields
+    exit 0
+fi
+
+printf 'fixture engine plan\n' | write_artifact || {
     status output_unavailable 21 caller_error absent path_role=output operation=open
     exit 21
 }
 
-status ok 0 success complete artifact=file outcome=solved
+if [ "$output" = "-" ]; then
+    status ok 0 success complete artifact=stdout outcome=solved $input_fields
+else
+    status ok 0 success complete artifact=file outcome=solved $input_fields
+fi
 exit 0

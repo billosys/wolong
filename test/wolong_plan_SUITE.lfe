@@ -50,6 +50,7 @@
       (equal #b("fixture engine plan\n") (map-get plan 'payload))
       (equal 20 (map-get plan 'payload-bytes))
       (equal 'true (map-get (map-get plan 'artifact) 'exists))
+      (equal 'stdout (map-get (map-get plan 'artifact) 'source))
       (equal #b("ok") (map-get (map-get engine 'status-fields) 'status))
       (equal #b("solved") (map-get (map-get engine 'status-fields) 'outcome))
       (equal 'not-run (map-get verification 'separate-verifier))
@@ -112,10 +113,10 @@
       (equal 'error (element 1 result))
       (equal 'parser (element 1 reason))
       (equal 'input-unavailable (element 2 reason))
-      (equal 'true (filelib:is_file (marker-path workspace "parser.invoked")))
-      (equal 'false
-             (filelib:is_file (marker-path workspace "grounder.invoked")))
-      (equal 'false (filelib:is_file (marker-path workspace "engine.invoked"))))))
+      (equal 'true (maps:is_key 'parser detail))
+      (equal 'false (maps:is_key 'grounder detail))
+      (equal 'false (maps:is_key 'engine detail))
+      (equal 'true (filelib:is_dir (map-get workspace 'path))))))
 
 (defun grounder_failure_is_typed_and_short_circuits (_config)
   (let ((base-dir (temp-base "grounder-failure")))
@@ -127,9 +128,10 @@
       (equal 'error (element 1 result))
       (equal 'grounder (element 1 reason))
       (equal 'input-invalid (element 2 reason))
-      (equal 'true (filelib:is_file (marker-path workspace "parser.invoked")))
-      (equal 'true (filelib:is_file (marker-path workspace "grounder.invoked")))
-      (equal 'false (filelib:is_file (marker-path workspace "engine.invoked"))))))
+      (equal 'true (maps:is_key 'parser detail))
+      (equal 'true (maps:is_key 'grounder detail))
+      (equal 'false (maps:is_key 'engine detail))
+      (equal 'true (filelib:is_file (artifact-path workspace 'parser))))))
 
 (defun engine_failure_is_typed_and_distinct_from_unsolvable (_config)
   (let ((base-dir (temp-base "engine-failure")))
@@ -141,7 +143,7 @@
       (equal 'error (element 1 result))
       (equal 'engine (element 1 reason))
       (equal 'input-invalid (element 2 reason))
-      (equal 'true (filelib:is_file (marker-path workspace "engine.invoked")))
+      (equal 'true (maps:is_key 'engine detail))
       (equal 'false (filelib:is_file (artifact-path workspace 'engine))))))
 
 (defun invalid_args_and_opts_do_not_invoke_fixtures (_config)
@@ -261,9 +263,6 @@
 
 (defun artifact-path (workspace role)
   (map-get (map-get workspace 'artifacts) role))
-
-(defun marker-path (workspace marker)
-  (filename:join (map-get workspace 'path) marker))
 
 (defun equal (expected actual)
   (case (=:= expected actual)

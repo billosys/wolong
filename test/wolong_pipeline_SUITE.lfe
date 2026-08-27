@@ -8,6 +8,7 @@
    (keep_false_removes_only_dispatch_workspace 1)
    (no_plan_keep_true_preserves_domain_result 1)
    (parser_failure_short_circuits 1)
+   (stdout_artifact_truncation_is_typed 1)
    (suite 0)
    (unavailable_workdir_is_typed 1)
    (unique_workspace_and_artifact_roles_keep_true 1)))
@@ -19,6 +20,7 @@
      parser_failure_short_circuits
      grounder_failure_short_circuits
      engine_failure_is_typed_and_distinct_from_no_plan
+     stdout_artifact_truncation_is_typed
      unavailable_workdir_is_typed
      cleanup_refuses_outside_dispatch_workspace))
 
@@ -69,7 +71,8 @@
       (equal 'true (filelib:is_file (artifact-path workspace 'parser)))
       (equal 'true (filelib:is_file (artifact-path workspace 'grounder)))
       (equal 'false (filelib:is_file (artifact-path workspace 'engine)))
-      (equal 'true (filelib:is_file (marker-path workspace "engine.invoked"))))))
+      (equal 'stdout (map-get (map-get engine 'artifact) 'source))
+      (equal 'false (map-get (map-get engine 'artifact) 'exists)))))
 
 (defun keep_false_removes_only_dispatch_workspace (_config)
   (let* ((base-dir (temp-base "cleanup"))
@@ -86,9 +89,10 @@
       (equal 'false (filelib:is_dir (map-get workspace 'path)))
       (equal 'true (filelib:is_dir base-dir))
       (equal 'true (filelib:is_file sentinel))
-      (equal #b() (map-get (map-get detail 'engine) 'stdout))
-      (equal 'true
-             (map-get (map-get (map-get detail 'engine) 'artifact) 'exists)))))
+      (equal #b("fixture engine plan\n")
+             (map-get (map-get detail 'engine) 'stdout))
+      (equal 'stdout
+             (map-get (map-get (map-get detail 'engine) 'artifact) 'source)))))
 
 ;;; ----------------
 ;;; short-circuit failures
@@ -107,10 +111,10 @@
       (equal 'error (element 1 result))
       (equal 'parser (element 1 reason))
       (equal 'input-unavailable (element 2 reason))
-      (equal 'true (filelib:is_file (marker-path workspace "parser.invoked")))
-      (equal 'false
-             (filelib:is_file (marker-path workspace "grounder.invoked")))
-      (equal 'false (filelib:is_file (marker-path workspace "engine.invoked"))))))
+      (equal 'true (maps:is_key 'parser detail))
+      (equal 'false (maps:is_key 'grounder detail))
+      (equal 'false (maps:is_key 'engine detail))
+      (equal 'true (filelib:is_dir (map-get workspace 'path))))))
 
 (defun grounder_failure_short_circuits (_config)
   (let ((base-dir (temp-base "grounder-failure")))
@@ -122,9 +126,10 @@
       (equal 'error (element 1 result))
       (equal 'grounder (element 1 reason))
       (equal 'input-invalid (element 2 reason))
-      (equal 'true (filelib:is_file (marker-path workspace "parser.invoked")))
-      (equal 'true (filelib:is_file (marker-path workspace "grounder.invoked")))
-      (equal 'false (filelib:is_file (marker-path workspace "engine.invoked"))))))
+      (equal 'true (maps:is_key 'parser detail))
+      (equal 'true (maps:is_key 'grounder detail))
+      (equal 'false (maps:is_key 'engine detail))
+      (equal 'true (filelib:is_file (artifact-path workspace 'parser))))))
 
 (defun engine_failure_is_typed_and_distinct_from_no_plan (_config)
   (let ((base-dir (temp-base "engine-failure")))
@@ -138,8 +143,23 @@
       (equal 'input-invalid (element 2 reason))
       (equal 'true (filelib:is_file (artifact-path workspace 'parser)))
       (equal 'true (filelib:is_file (artifact-path workspace 'grounder)))
-      (equal 'true (filelib:is_file (marker-path workspace "engine.invoked")))
+      (equal 'true (maps:is_key 'engine detail))
       (equal 'false (filelib:is_file (artifact-path workspace 'engine))))))
+
+(defun stdout_artifact_truncation_is_typed (_config)
+  (let ((base-dir (temp-base "stdout-truncation")))
+    (set-env base-dir 'true)
+    (let* ((result (run-case "output-flood"))
+            (reason (element 2 result))
+            (detail (element 3 reason))
+            (engine (map-get detail 'engine)))
+      (equal 'error (element 1 result))
+      (equal 'engine (element 1 reason))
+      (equal 'artifact-truncated (element 2 reason))
+      (equal 65536 (byte_size (map-get engine 'stdout)))
+      (equal 'true (map-get engine 'stdout-truncated))
+      (equal 'false (map-get engine 'stderr-truncated))
+      (equal #b("ok") (map-get (map-get engine 'status-fields) 'status)))))
 
 ;;; ----------------
 ;;; workspace failures and cleanup safety
@@ -238,14 +258,25 @@
           (status (map-get gate-detail 'status-fields))
           (artifact (map-get gate-detail 'artifact)))
     (equal #b("ok") (map-get status 'status))
+    (equal #b("stdout") (map-get status 'artifact))
+    (assert-stdio-status gate status)
     (equal 'true (map-get artifact 'exists))
-    (equal #b() (map-get gate-detail 'stdout))))
+    (equal 'stdout (map-get artifact 'source))
+    (not-equal #b() (map-get gate-detail 'stdout))))
+
+(defun assert-stdio-status
+  (('parser _status) 'ok)
+  (('grounder status)
+   (equal #b("-") (map-get status #b("path")))
+   (equal #b("htn") (map-get status 'path-role))
+   (equal #b("read") (map-get status 'operation)))
+  (('engine status)
+   (equal #b("-") (map-get status #b("path")))
+   (equal #b("engine_input") (map-get status 'path-role))
+   (equal #b("read") (map-get status 'operation))))
 
 (defun artifact-path (workspace role)
   (map-get (map-get workspace 'artifacts) role))
-
-(defun marker-path (workspace marker)
-  (filename:join (map-get workspace 'path) marker))
 
 (defun equal (expected actual)
   (case (=:= expected actual)

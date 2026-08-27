@@ -113,10 +113,8 @@
   (set-env (temp-base "term-resistant") 'true 250)
   (let* ((result (run-case "engine-timeout"))
           (detail (element 3 (element 2 result)))
-          (workspace (map-get detail 'workspace))
-          (pid-file (marker-path workspace "engine-timeout.pid"))
-          (`#(ok ,pid-bin) (file:read_file pid-file))
-          (pid (string:trim (binary_to_list pid-bin))))
+          (engine (map-get detail 'engine))
+          (pid (integer_to_list (map-get engine 'os-pid))))
     (equal 'error (element 1 result))
     (equal 'engine (element 1 (element 2 result)))
     (equal 'timeout (element 2 (element 2 result)))
@@ -313,9 +311,6 @@
   (lists:any
     (lambda (child) (=:= child-id (element 1 child)))
     (supervisor:which_children supervisor)))
-
-(defun marker-path (workspace marker)
-  (filename:join (map-get workspace 'path) marker))
 
 (defun equal (expected actual)
   (case (=:= expected actual)

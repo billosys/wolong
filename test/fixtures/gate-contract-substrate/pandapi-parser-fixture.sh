@@ -24,8 +24,24 @@ usage_error() {
 output="$4"
 domain="$5"
 problem="$6"
-output_dir=$(dirname "$output")
-: >"$output_dir/parser.invoked"
+
+if [ "$domain" = "-" ] && [ "$problem" = "-" ]; then
+    status cli_usage_error 10 caller_error absent path_role=parser_input operation=read
+    exit 10
+fi
+
+if [ "$output" != "-" ]; then
+    output_dir=$(dirname "$output")
+    : >"$output_dir/parser.invoked"
+fi
+
+write_artifact() {
+    if [ "$output" = "-" ]; then
+        cat
+    else
+        cat >"$output"
+    fi
+}
 
 if [ ! -r "$domain" ]; then
     status input_unavailable 20 caller_error absent path_role=domain operation=open
@@ -38,36 +54,45 @@ if [ ! -r "$problem" ]; then
 fi
 
 if grep -q 'force-grounder-invalid' "$domain"; then
-    printf 'fixture parser artifact\nmalformed\n' >"$output" || {
+    printf 'fixture parser artifact\nmalformed\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'force-engine-invalid' "$domain"; then
-    printf 'fixture parser artifact\nengine-invalid\n' >"$output" || {
+    printf 'fixture parser artifact\nengine-invalid\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'force-engine-timeout' "$domain"; then
-    printf 'fixture parser artifact\nengine-timeout\n' >"$output" || {
+    printf 'fixture parser artifact\nengine-timeout\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-engine-output-flood' "$domain"; then
+    printf 'fixture parser artifact\nengine-output-flood\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'force-slow-success' "$domain"; then
-    printf 'fixture parser artifact\nslow-success\n' >"$output" || {
+    printf 'fixture parser artifact\nslow-success\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'wolong-unsolvable' "$domain"; then
-    printf 'fixture parser artifact\nunsolvable\n' >"$output" || {
+    printf 'fixture parser artifact\nunsolvable\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 else
-    printf 'fixture parser artifact\n' >"$output" || {
+    printf 'fixture parser artifact\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 fi
 
-status ok 0 success complete artifact=file
+if [ "$output" = "-" ]; then
+    status ok 0 success complete artifact=stdout
+else
+    status ok 0 success complete artifact=file
+fi
 exit 0

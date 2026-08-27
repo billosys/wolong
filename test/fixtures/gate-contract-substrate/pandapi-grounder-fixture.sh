@@ -23,11 +23,35 @@ usage_error() {
 
 output="$4"
 input="$5"
-output_dir=$(dirname "$output")
-: >"$output_dir/grounder.invoked"
+scratch=$(mktemp)
+trap 'rm -f "$scratch"' EXIT
+
+if [ "$output" != "-" ]; then
+    output_dir=$(dirname "$output")
+    : >"$output_dir/grounder.invoked"
+fi
+
+write_artifact() {
+    if [ "$output" = "-" ]; then
+        cat
+    else
+        cat >"$output"
+    fi
+}
+
+if [ "$input" = "-" ]; then
+    cat >"$scratch" || {
+        status input_unavailable 20 caller_error absent path=- path_role=htn operation=read
+        exit 20
+    }
+    input="$scratch"
+    input_fields="path=- path_role=htn operation=read"
+else
+    input_fields="path_role=input operation=open"
+fi
 
 if [ ! -r "$input" ]; then
-    status input_unavailable 20 caller_error absent path_role=input operation=open
+    status input_unavailable 20 caller_error absent $input_fields
     exit 20
 fi
 
@@ -37,31 +61,40 @@ if grep -q 'malformed' "$input"; then
 fi
 
 if grep -q 'engine-invalid' "$input"; then
-    printf 'fixture grounder artifact\nmalformed\n' >"$output" || {
+    printf 'fixture grounder artifact\nmalformed\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'unsolvable' "$input"; then
-    printf 'fixture grounder artifact\nunsolvable\n' >"$output" || {
+    printf 'fixture grounder artifact\nunsolvable\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'engine-timeout' "$input"; then
-    printf 'fixture grounder artifact\nengine-timeout\n' >"$output" || {
+    printf 'fixture grounder artifact\nengine-timeout\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'engine-output-flood' "$input"; then
+    printf 'fixture grounder artifact\nengine-output-flood\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 elif grep -q 'slow-success' "$input"; then
-    printf 'fixture grounder artifact\nslow-success\n' >"$output" || {
+    printf 'fixture grounder artifact\nslow-success\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 else
-    printf 'fixture grounder artifact\n' >"$output" || {
+    printf 'fixture grounder artifact\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }
 fi
 
-status ok 0 success complete artifact=file
+if [ "$output" = "-" ]; then
+    status ok 0 success complete artifact=stdout $input_fields
+else
+    status ok 0 success complete artifact=file $input_fields
+fi
 exit 0

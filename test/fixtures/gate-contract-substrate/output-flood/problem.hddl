@@ -1,0 +1,2 @@
+(define (problem wolong-output-flood-problem)
+  (:domain wolong-output-flood))

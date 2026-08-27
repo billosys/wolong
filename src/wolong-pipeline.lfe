@@ -51,65 +51,28 @@
           (parser (maps:get 'parser binaries))
           (grounder (maps:get 'grounder binaries))
           (engine (maps:get 'engine binaries)))
-    (case (wolong-gate:run-parser-to parser
-                                     parser-output
-                                     domain-path
-                                     problem-path
-                                     config)
+    (case (wolong-gate:run-parser-stdout-to parser
+                                            parser-output
+                                            domain-path
+                                            problem-path
+                                            config)
       (`#(ok ,parser-detail)
-       (case (wolong-gate:run-grounder-to grounder
-                                          grounder-output
-                                          parser-output
-                                          config)
-         (`#(ok ,grounder-detail)
-          (case (wolong-gate:run-engine-to engine
-                                           engine-output
-                                           grounder-output
-                                           config)
-            (`#(ok ,engine-detail)
-             (case (attach-plan-payload engine-detail)
-               (`#(ok ,engine-with-payload)
-                (finish
-                  `#(ok
-                     ,(map 'workspace workspace
-                           'parser parser-detail
-                           'grounder grounder-detail
-                           'engine engine-with-payload))
-                  workspace config))
-               (`#(error #(,reason ,payload-detail))
-                (finish
-                  `#(error
-                     #(engine ,reason
-                              ,(map 'workspace workspace
-                                    'parser parser-detail
-                                    'grounder grounder-detail
-                                    'engine engine-detail
-                                    'payload-error payload-detail)))
-                  workspace config))))
-            (`#(domain-no-plan ,engine-detail)
-             (finish
-               `#(domain-no-plan
-                  ,(map 'workspace workspace
-                        'parser parser-detail
-                        'grounder grounder-detail
-                        'engine engine-detail))
-               workspace config))
-            (`#(error #(,reason ,engine-detail))
-             (finish
-               `#(error
-                  #(engine ,reason
-                           ,(map 'workspace workspace
-                                 'parser parser-detail
-                                 'grounder grounder-detail
-                                 'engine engine-detail)))
-               workspace config))))
-         (`#(error #(,reason ,grounder-detail))
+       (case (materialize-stdout-artifact parser-detail)
+         (`#(ok ,parser-with-artifact)
+          (run-grounder-stage grounder
+                              grounder-output
+                              engine
+                              engine-output
+                              parser-with-artifact
+                              workspace
+                              config))
+         (`#(error #(,reason ,payload-detail))
           (finish
             `#(error
-               #(grounder ,reason
-                          ,(map 'workspace workspace
-                                'parser parser-detail
-                                'grounder grounder-detail)))
+               #(parser ,reason
+                        ,(map 'workspace workspace
+                              'parser parser-detail
+                              'payload-error payload-detail)))
             workspace config))))
       (`#(error #(,reason ,parser-detail))
        (finish
@@ -117,20 +80,116 @@
             #(parser ,reason ,(map 'workspace workspace 'parser parser-detail)))
          workspace config)))))
 
-(defun attach-plan-payload (engine-detail)
-  (let* ((artifact (maps:get 'artifact engine-detail))
-          (path (maps:get 'path artifact)))
-    (case (file:read_file path)
-      (`#(ok ,payload)
+(defun run-grounder-stage (grounder grounder-output
+                                    engine
+                                    engine-output
+                                    parser-detail
+                                    workspace
+                                    config)
+  (case (wolong-gate:run-grounder-stdin-to grounder
+                                           grounder-output
+                                           (maps:get 'stdout parser-detail)
+                                           config)
+    (`#(ok ,grounder-detail)
+     (case (materialize-stdout-artifact grounder-detail)
+       (`#(ok ,grounder-with-artifact)
+        (run-engine-stage engine
+                          engine-output
+                          parser-detail
+                          grounder-with-artifact
+                          workspace
+                          config))
+       (`#(error #(,reason ,payload-detail))
+        (finish
+          `#(error
+             #(grounder ,reason
+                        ,(map 'workspace workspace
+                              'parser parser-detail
+                              'grounder grounder-detail
+                              'payload-error payload-detail)))
+          workspace config))))
+    (`#(error #(,reason ,grounder-detail))
+     (finish
+       `#(error
+          #(grounder ,reason
+                     ,(map 'workspace workspace
+                           'parser parser-detail
+                           'grounder grounder-detail)))
+       workspace config))))
+
+(defun run-engine-stage (engine engine-output
+                                parser-detail
+                                grounder-detail
+                                workspace
+                                config)
+  (case (wolong-gate:run-engine-stdin-to engine
+                                         engine-output
+                                         (maps:get 'stdout grounder-detail)
+                                         config)
+    (`#(ok ,engine-detail)
+     (case (materialize-stdout-artifact engine-detail)
+       (`#(ok ,engine-with-artifact)
+        (finish
+          `#(ok
+             ,(map 'workspace workspace
+                   'parser parser-detail
+                   'grounder grounder-detail
+                   'engine (attach-plan-payload engine-with-artifact)))
+          workspace config))
+       (`#(error #(,reason ,payload-detail))
+        (finish
+          `#(error
+             #(engine ,reason
+                      ,(map 'workspace workspace
+                            'parser parser-detail
+                            'grounder grounder-detail
+                            'engine engine-detail
+                            'payload-error payload-detail)))
+          workspace config))))
+    (`#(domain-no-plan ,engine-detail)
+     (finish
+       `#(domain-no-plan
+          ,(map 'workspace workspace
+                'parser parser-detail
+                'grounder grounder-detail
+                'engine engine-detail))
+       workspace config))
+    (`#(error #(,reason ,engine-detail))
+     (finish
+       `#(error
+          #(engine ,reason
+                   ,(map 'workspace workspace
+                         'parser parser-detail
+                         'grounder grounder-detail
+                         'engine engine-detail)))
+       workspace config))))
+
+(defun materialize-stdout-artifact (gate-detail)
+  (let* ((artifact (maps:get 'artifact gate-detail))
+          (path (maps:get 'path artifact))
+          (payload (maps:get 'stdout gate-detail)))
+    (case (file:write_file path payload)
+      ('ok
        `#(ok
-          ,(maps:put 'plan-payload
-                     (map 'bytes payload
-                          'byte-size (byte_size payload)
-                          'source 'engine-artifact
-                          'path path)
-                     engine-detail)))
+          ,(maps:put 'artifact
+                     (maps:merge artifact
+                                 (map 'materialized 'true
+                                      'exists (filelib:is_file path)
+                                      'bytes (byte_size payload)))
+                     gate-detail)))
       (`#(error ,reason)
-       `#(error #(plan-payload-unavailable ,(map 'path path 'reason reason)))))))
+       `#(error
+          #(artifact-materialize-failed
+            ,(map 'path path 'reason reason 'bytes (byte_size payload))))))))
+
+(defun attach-plan-payload (engine-detail)
+  (let ((payload (maps:get 'stdout engine-detail)))
+    (maps:put 'plan-payload
+              (map 'bytes payload
+                   'byte-size (byte_size payload)
+                   'source 'engine-stdout
+                   'path (maps:get 'path (maps:get 'artifact engine-detail)))
+              engine-detail)))
 
 ;;; ----------------
 ;;; cleanup and result metadata

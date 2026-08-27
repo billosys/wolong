@@ -16,6 +16,8 @@
    (status_parser_numeric_exit_code 1)
    (status_parser_unknown_field_preserved 1)
    (status_parser_valid_record 1)
+   (stdio_gate_helpers_use_stdin_stdout_and_parser_caveat 1)
+   (stdout_artifact_classifier_requires_usable_stdout 1)
    (suite 0)
    (supervised_parse_ground_solve_fixture 1)))
 
@@ -34,6 +36,8 @@
      mapper_status_exit_code_mismatch_is_typed
      engine_domain_no_plan_success_shape
      engine_domain_no_plan_distinct_from_failures
+     stdout_artifact_classifier_requires_usable_stdout
+     stdio_gate_helpers_use_stdin_stdout_and_parser_caveat
      supervised_parse_ground_solve_fixture))
 
 (defun suite () `(#(timetrap #(seconds 30))))
@@ -289,8 +293,97 @@
                        'error 'missing-artifact output-path)))
 
 ;;; ----------------
+;;; stdout artifact classification
+;;; ----------------
+
+(defun stdout_artifact_classifier_requires_usable_stdout (_config)
+  (let* ((output-path (temp-path "wolong-stdout-artifact.htn"))
+          (ok-result
+            (wolong-gate:classify-stdout
+              'parser
+              (tuple 'ok
+                     (completed-result-with-stdout
+                       0
+                       #b("artifact\n")
+                       (status-record #b("ok") 0)))
+              output-path))
+          (ok-detail (element 2 ok-result))
+          (missing-result
+            (wolong-gate:classify-stdout
+              'parser
+              (tuple 'ok
+                     (completed-result-with-stdout
+                       0
+                       #b()
+                       (status-record #b("ok") 0)))
+              output-path))
+          (truncated-result
+            (wolong-gate:classify-stdout
+              'parser
+              (tuple 'ok
+                     (truncated-stdout-result
+                       0
+                       #b("partial")
+                       (status-record #b("ok") 0)))
+              output-path)))
+    (equal 'ok (element 1 ok-result))
+    (equal 'stdout (map-get (map-get ok-detail 'artifact) 'source))
+    (equal 'false (filelib:is_file output-path))
+    (equal 'error (element 1 missing-result))
+    (equal 'missing-artifact (element 1 (element 2 missing-result)))
+    (equal 'error (element 1 truncated-result))
+    (equal 'artifact-truncated (element 1 (element 2 truncated-result)))))
+
+;;; ----------------
 ;;; supervised fixture chain
 ;;; ----------------
+
+(defun stdio_gate_helpers_use_stdin_stdout_and_parser_caveat (_config)
+  (set-env)
+  (ok (element 1 (application:ensure_all_started 'wolong)))
+  (let* ((config (ok-value (wolong-config:validate)))
+          (parser (ok-value (wolong-binaries:parser)))
+          (grounder (ok-value (wolong-binaries:grounder)))
+          (engine (ok-value (wolong-binaries:engine)))
+          (parser-path (temp-path "wolong-stdio-parser.htn"))
+          (grounder-path (temp-path "wolong-stdio-grounder.sas"))
+          (engine-path (temp-path "wolong-stdio-engine.plan"))
+          (parsed
+            (wolong-gate:run-parser-stdout-to parser
+                                              parser-path
+                                              (fixture-path
+                                                "gate-contract-substrate/minimal/domain.hddl")
+                                              (fixture-path
+                                                "gate-contract-substrate/minimal/problem.hddl")
+                                              config))
+          (parsed-detail (element 2 parsed))
+          (grounded
+            (wolong-gate:run-grounder-stdin-to grounder
+                                               grounder-path
+                                               (map-get parsed-detail 'stdout)
+                                               config))
+          (grounded-detail (element 2 grounded))
+          (solved
+            (wolong-gate:run-engine-stdin-to engine
+                                             engine-path
+                                             (map-get grounded-detail 'stdout)
+                                             config))
+          (solved-detail (element 2 solved))
+          (unsupported
+            (wolong-gate:run-parser-stdout-to parser parser-path "-" "-" config)))
+    (equal 'ok (element 1 parsed))
+    (assert-stdout-artifact parsed-detail 'parser)
+    (equal 'false (filelib:is_file parser-path))
+    (equal 'ok (element 1 grounded))
+    (assert-stdout-artifact grounded-detail 'grounder)
+    (assert-stdin-status grounded-detail #b("htn"))
+    (equal 'false (filelib:is_file grounder-path))
+    (equal 'ok (element 1 solved))
+    (assert-stdout-artifact solved-detail 'engine)
+    (assert-stdin-status solved-detail #b("engine_input"))
+    (equal 'false (filelib:is_file engine-path))
+    (equal 'error (element 1 unsupported))
+    (equal 'cli-usage-error (element 1 (element 2 unsupported)))))
 
 (defun supervised_parse_ground_solve_fixture (_config)
   (set-env)
@@ -417,6 +510,22 @@
        'stderr-truncated 'false
        'timed-out 'false))
 
+(defun completed-result-with-stdout (exit-status stdout stderr)
+  (map 'exit-status exit-status
+       'stdout stdout
+       'stderr stderr
+       'duration-ms 1
+       'output-limit-bytes 65536
+       'stdout-bytes (byte_size stdout)
+       'stderr-bytes (byte_size stderr)
+       'stdout-truncated 'false
+       'stderr-truncated 'false
+       'timed-out 'false))
+
+(defun truncated-stdout-result (exit-status stdout stderr)
+  (maps:put 'stdout-truncated 'true
+            (completed-result-with-stdout exit-status stdout stderr)))
+
 (defun signaled-result (signal)
   (map 'exit-status 'undefined
        'signal signal
@@ -448,6 +557,21 @@
 
 (defun ok (actual)
   (equal 'ok actual))
+
+(defun assert-stdout-artifact (detail expected-gate)
+  (let ((artifact (map-get detail 'artifact))
+         (status (map-get detail 'status-fields)))
+    (equal expected-gate (map-get detail 'gate))
+    (equal 'stdout (map-get artifact 'source))
+    (equal 'true (map-get artifact 'exists))
+    (equal #b("stdout") (map-get status 'artifact))
+    (not-true (=< (byte_size (map-get detail 'stdout)) 0))))
+
+(defun assert-stdin-status (detail expected-role)
+  (let ((status (map-get detail 'status-fields)))
+    (equal #b("-") (map-get status #b("path")))
+    (equal expected-role (map-get status 'path-role))
+    (equal #b("read") (map-get status 'operation))))
 
 (defun not-true (actual)
   (case actual
