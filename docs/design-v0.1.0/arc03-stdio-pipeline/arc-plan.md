@@ -94,16 +94,16 @@ the runner and pipeline slices stay reviewable.
   success paths when `--status=stderr` is selected. Chengdu also rejects
   `--status=stdout` with `--output -` as a usage error instead of mixing status
   with artifact stdout.
-- **OQ3 - resolved by slice01:** erlexec exposes the necessary mechanics:
-  `stdin`/`{stdin, ...}` command options, `exec:send/2` for binary stdin data,
-  `exec:send(PidOrOsPid, eof)` to close stdin, and separate stdout/stderr
-  message delivery when pty mode is not used. Wolong's current runner does not
-  expose stdin yet, but the substrate is technically available.
-- **OQ4 - open for Slice02/Slice05:** Current real fixture artifacts are small
-  enough for investigation, but the stdio runner still needs explicit bounded
-  capture behavior and concurrent draining of stdout/stderr. Slice02 owns the
-  existing bounded-capture policy for stdin runs; Slice05 remains available if
-  larger artifact/backpressure stress deserves its own hardening slice.
+- **OQ3 - resolved by slice02:** erlexec exposes the necessary mechanics, and
+  Wolong now has `wolong-exec:run-stdin/4` for argv-list execution with stdin
+  bytes, EOF delivery, separated stdout/stderr capture, output caps, nonzero
+  completed exits, timeout cleanup, and recovery. `wolong-exec:run/3` remains
+  the no-stdin compatibility API.
+- **OQ4 - partially resolved by slice02; open for Slice05:** Slice02 proves
+  the existing bounded-capture policy and concurrent stdout/stderr draining for
+  fixture-scale stdin runs. Slice05 remains available for larger
+  artifact/backpressure stress if Slice03 shows release-scale artifacts need a
+  separate hardening pass.
 - **OQ5 - resolved by slice01:** CI should continue using strict
   Wolong-owned fixtures. Real Chengdu binary probes remain optional local
   evidence until release artifacts are available to CI; remote CI must not
@@ -129,6 +129,14 @@ the runner and pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.3 - 2026-08-26 (surfaced by slice02).** Slice02 lands
+  `wolong-exec:run-stdin/4` as the explicit stdin-capable runner API while
+  preserving `run/3` compatibility. Common Test covers EOF-sensitive stdin,
+  empty stdin, invalid stdin shape, literal argv with shell metacharacters,
+  stream separation, independent caps, nonzero completed exit, TERM-resistant
+  timeout cleanup, and recovery. Slice03 may now wire gate artifacts through
+  the supported Chengdu stdio shape, while preserving the parser caveat that
+  `pandapi-parser - -` is unsupported.
 - **v1.2 - 2026-08-26 (surfaced by Chengdu re-entry evidence).** Arc03 resumes
   after current Chengdu `release/0.3.x` at `e55ef5fd` proves the supported
   artifact stdio contract. Local `make test-contract-stdio-managed` passes

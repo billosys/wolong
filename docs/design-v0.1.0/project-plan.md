@@ -122,17 +122,18 @@ consumer side of chengdu's provenance manifest.
   but arc-level release composition surfaced a gap: Arc02 proves a
   fixture-backed/file-artifact pipeline, not the stdio pipeline required for
   Wolong release readiness.
-- **arc03 — resumed 2026-08-26.** Detailed plan:
+- **arc03 — active 2026-08-26.** Detailed plan:
   `arc03-stdio-pipeline/arc-plan.md`. Slice01 originally paused the arc on a
   Chengdu input-stdin blocker. Current Chengdu `release/0.3.x` local evidence
   at `e55ef5fd` moves that blocker: `make test-contract-stdio-managed` passes
   187/0, parser supports exactly one `-` input (`domain -` or `problem -`),
   parser `- -` remains a documented usage error, and grounder/engine accept
-  artifact stdin with artifact stdout and final status on stderr. Arc03 now
-  resumes at Slice02, whose blocker is Wolong-owned: `wolong-exec` must expose
-  stdin bytes plus EOF under erlexec while preserving argv-list execution,
-  separated stdout/stderr capture, typed classification, output bounds,
-  timeout cleanup, and no shell command strings.
+  artifact stdin with artifact stdout and final status on stderr. Slice02 now
+  lands `wolong-exec:run-stdin/4`, which exposes stdin bytes plus EOF under
+  erlexec while preserving argv-list execution, separated stdout/stderr
+  capture, typed classification substrate, output bounds, timeout cleanup, and
+  no shell command strings. The next development slice is Slice03, wiring gate
+  artifacts through the stdio path without changing the parser `- -` caveat.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -153,6 +154,15 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.8 - 2026-08-26 (surfaced by arc03 slice02).** Wolong now has an
+  explicit stdin-capable runner API, `wolong-exec:run-stdin/4`, while
+  preserving `run/3` compatibility and the public planning API. The runner
+  sends binary stdin bytes plus EOF, captures stdout/stderr separately, keeps
+  independent output caps, treats nonzero child exit as completed process
+  output, preserves timeout kill-group cleanup, and recovers after failures.
+  Arc03 advances to Slice03 gate-pipeline stdio wiring. The parser caveat from
+  Chengdu remains load-bearing: exactly one parser HDDL input may be stdin;
+  parser `- -` is unsupported.
 - **v1.7 - 2026-08-26 (surfaced by Chengdu re-entry evidence).** Arc03 resumes
   after current Chengdu `release/0.3.x` at `e55ef5fd` proves the supported
   stdio artifact pipeline. Local `make test-contract-stdio-managed` passes
