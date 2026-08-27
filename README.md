@@ -55,9 +55,10 @@ for the full definition of done, non-goals, and arc roadmap.
 implemented parser/grounder/engine gate classification, workspaces, public
 planning, dispatch supervision, and the explicit verification-boundary
 disposition. `arc03-stdio-pipeline` has resumed after current Chengdu
-`release/0.3.x` proved the supported artifact stdio contract; the active
-Slice02 work is Wolong-owned stdin bytes plus EOF support in `wolong-exec`.
-`arc04-provisioning` is still future work.
+`release/0.3.x` proved the supported artifact stdio contract, and Slice02
+landed Wolong-owned stdin bytes plus EOF support in `wolong-exec`. Slice03 is
+open to wire parser, grounder, and engine gate artifacts through the stdio
+path. `arc04-provisioning` is still future work.
 
 Remote CI uses Wolong-owned fixtures and does not depend on a sibling Chengdu
 checkout.

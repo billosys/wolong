@@ -41,7 +41,7 @@ is Wolong-owned runner support for stdin bytes plus EOF.
 |-------|------|------------------|------------------|
 | slice01 | `stdio-contract-investigation` | Survey and probe the current Chengdu docs/binaries plus erlexec/LFE mechanics for stdin/stdout/stderr pipeline feasibility; classify the result as proceed, Wolong-design-needed, or Chengdu-blocked. | all arc03 slices |
 | slice02 | `stdio-runner` | Extend or add a Wolong-owned erlexec runner surface for stdin bytes plus EOF while preserving separated stdout/stderr capture, typed results, output caps, timeout cleanup, and shell-free argv execution. | slice03, slice04 |
-| slice03 | `stdio-gate-pipeline` | Rework the internal gate pipeline to pass parser and grounder artifacts through the supported stdio contract while preserving typed status/exit classification and workspace hygiene. | slice04 |
+| slice03 | `stdio-gate-pipeline` | Rework the internal gate pipeline so parser artifact stdout feeds grounder stdin and grounder artifact stdout feeds engine stdin, while parser still receives the supported two-input planning instance and typed status/exit classification remains intact. | slice04 |
 | slice04 | `real-binary-public-plan` | Prove public `wolong:plan/2,3` and parser-only `wolong:validate/2` against real local Chengdu 0.3.0 binaries through the stdio path, with CI-safe fixtures that model the same contract honestly. | project W1-W4; arc04 |
 | slice05 | `backpressure-timeout-hardening` | Add focused stress and failure coverage for large stdout artifacts, stderr diagnostics, partial output, TERM-resistant children, and recovery after failed stdio dispatches if Slice01/02 show this needs its own slice. | release confidence |
 
@@ -129,6 +129,14 @@ the runner and pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.4 - 2026-08-26 (surfaced by slice03 opening).** Slice03 is opened with
+  the agreed parser boundary clarified: the common release case is domain and
+  problem paths into one parser invocation, parser artifact stdout into
+  grounder stdin, and grounder artifact stdout into engine stdin. Parser
+  exactly-one-stdin support remains acknowledged but not required for the first
+  pipeline implementation; parser `- -`, split domain/problem parser workers,
+  framed stdin, and domain/problem artifact merging are deferred until a real
+  upstream producer use case or Chengdu contract exists.
 - **v1.3 - 2026-08-26 (surfaced by slice02).** Slice02 lands
   `wolong-exec:run-stdin/4` as the explicit stdin-capable runner API while
   preserving `run/3` compatibility. Common Test covers EOF-sensitive stdin,

@@ -132,8 +132,8 @@ consumer side of chengdu's provenance manifest.
   lands `wolong-exec:run-stdin/4`, which exposes stdin bytes plus EOF under
   erlexec while preserving argv-list execution, separated stdout/stderr
   capture, typed classification substrate, output bounds, timeout cleanup, and
-  no shell command strings. The next development slice is Slice03, wiring gate
-  artifacts through the stdio path without changing the parser `- -` caveat.
+  no shell command strings. Slice03 is now open to wire gate artifacts through
+  the stdio path without changing the parser `- -` caveat.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -154,6 +154,13 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.9 - 2026-08-26 (surfaced by arc03 slice03 opening).** Arc03 Slice03 is
+  opened as the stdio gate-pipeline implementation slice. The intended
+  near-term release shape is parser file/path inputs with parser artifact on
+  stdout, then grounder and engine consuming artifact stdin and emitting
+  artifact stdout. Split domain/problem parser workers and parser `- -` remain
+  deferred until an upstream producer or Chengdu framing/composition contract
+  makes that use case real.
 - **v1.8 - 2026-08-26 (surfaced by arc03 slice02).** Wolong now has an
   explicit stdin-capable runner API, `wolong-exec:run-stdin/4`, while
   preserving `run/3` compatibility and the public planning API. The runner
