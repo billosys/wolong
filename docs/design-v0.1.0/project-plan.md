@@ -133,9 +133,14 @@ consumer side of chengdu's provenance manifest.
   parser -> grounder -> engine pipeline through stdout/stdin artifact bytes:
   parser uses domain/problem paths with `--output -`, grounder reads parser
   stdout from stdin, and engine reads grounder stdout from stdin. The parser
-  `- -` caveat remains unchanged. Slice04 is open for real-binary public-plan
-  proof against the current local Chengdu 0.3.0 binaries; Arc04 still owns
-  clean-machine release provisioning and checksum/provenance composition.
+  `- -` caveat remains unchanged. Slice04 adds a repeatable public-boundary
+  Common Test proof against the current local Chengdu 0.3.0 binaries:
+  `wolong:plan/3`, `wolong:plan/2`, and parser-only `wolong:validate/2`
+  prove out locally against sibling Chengdu `release/0.3.x` / `e55ef5fd`.
+  Remote CI remains fixture-backed and may skip real-binary cases when Chengdu
+  binaries are absent. Slice05 remains available for release-scale
+  stdout/stderr and backpressure stress; Arc04 still owns clean-machine
+  release provisioning and checksum/provenance composition.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -156,6 +161,16 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.12 - 2026-08-27 (surfaced by arc03 slice04 close).** Wolong now has a
+  repeatable local real-binary public-boundary proof for current Chengdu
+  0.3.0. `test/wolong_real_chengdu_SUITE.lfe` drives public `wolong:plan/3`,
+  `wolong:plan/2`, and parser-only `wolong:validate/2` against sibling
+  Chengdu `release/0.3.x` / `e55ef5fd`, proving minimal solved, durable
+  keep-false payload, unsolvable `domain_no_plan`/exit `2`, typed parser
+  invalid input, and returned stdio provenance. This is local source-checkout
+  proof, not clean-machine release-artifact proof. Arc04 still owns binary
+  acquisition, checksums, and provenance; Slice05 remains for any
+  release-scale backpressure hardening before Arc03 close.
 - **v1.11 - 2026-08-27 (surfaced by arc03 slice04 opening).** Arc03 Slice04 is
   opened to turn Slice03's local smoke into a repeatable real-binary
   public-boundary proof. The proof target is public `wolong:plan/2`,

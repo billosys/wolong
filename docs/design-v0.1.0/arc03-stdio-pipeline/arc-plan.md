@@ -32,10 +32,9 @@ errors with the verification boundary explicit.
 Slice01 was investigation-first and originally paused the arc on a Chengdu
 input-stdin blocker. Current Chengdu `release/0.3.x` evidence at `e55ef5fd`
 moved that blocker, Slice02 added Wolong runner support for stdin bytes plus
-EOF, and Slice03 now wires Wolong's internal parser -> grounder -> engine
-pipeline through the supported stdio artifact path. Slice04 is open to prove
-that same path at Wolong's public API boundary with real local Chengdu
-binaries.
+EOF, Slice03 wired Wolong's internal parser -> grounder -> engine pipeline
+through the supported stdio artifact path, and Slice04 now proves that same
+path at Wolong's public API boundary with real local Chengdu binaries.
 
 ## 2. Slice breakdown
 
@@ -131,6 +130,17 @@ the runner and pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.7 - 2026-08-27 (surfaced by slice04 close).** Slice04 adds
+  `test/wolong_real_chengdu_SUITE.lfe`, a focused Common Test proof that
+  public `wolong:plan/3`, `wolong:plan/2`, and parser-only
+  `wolong:validate/2` drive the real sibling Chengdu `pandapi-*` binaries on
+  `release/0.3.x` / `e55ef5fd`. Minimal solved returns a durable non-empty
+  public payload, unsolvable returns `#(unsolvable Detail)` from engine
+  `domain_no_plan`/exit `2`, parser broken syntax maps to typed
+  `invalid-hddl`, and returned provenance proves parser artifact stdout plus
+  grounder/engine stdin. Remote CI remains fixture-backed and the real-binary
+  suite skips when Chengdu binaries are absent. Slice05 remains reserved for
+  release-scale stdout/stderr and backpressure stress before Arc03 close.
 - **v1.6 - 2026-08-27 (surfaced by slice04 opening).** Slice04 is opened as
   the real-binary public-plan proof. The scope is repeatable local evidence
   that public `wolong:plan/2`, `wolong:plan/3`, and parser-only

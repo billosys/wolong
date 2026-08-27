@@ -172,6 +172,19 @@ Also run and record the real-binary proof command, including the selected
 binary directory, fixture directory, Chengdu branch/head or release identifier,
 and observed solved/no-plan public result summaries.
 
+Operator-facing local command:
+
+```bash
+WOLONG_CHENGDU_BIN_DIR=../chengdu/bin \
+WOLONG_CHENGDU_FIXTURE_DIR=../chengdu/fixtures \
+rebar3 as test ct --suite test/wolong_real_chengdu_SUITE.lfe
+```
+
+If the environment variables are omitted, the suite uses the same sibling
+defaults when they exist. If the binaries or fixtures are absent, the suite
+skips with a concrete missing-directory or missing-component reason. A skipped
+real-binary suite is availability evidence only; it is not real-binary proof.
+
 Perform one tamper cycle. Good choices include pointing the real-binary proof
 at a missing engine, weakening the provenance assertion so file handoff would
 pass, treating no-plan as generic error, or changing the proof to accept a
