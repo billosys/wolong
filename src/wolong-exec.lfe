@@ -1,13 +1,20 @@
 (defmodule wolong-exec
   (export
-   (run 3)))
+   (run 3)
+   (run-stdin 4)))
 
 ;;; ----------------
 ;;; public API
 ;;; ----------------
 
 (defun run (command args opts)
-  (case (validate-input command args opts)
+  (case (validate-input command args 'no-stdin opts)
+    (`#(ok ,validated)
+     (run-valid validated))
+    (err err)))
+
+(defun run-stdin (command args stdin-bytes opts)
+  (case (validate-input command args stdin-bytes opts)
     (`#(ok ,validated)
      (run-valid validated))
     (err err)))
@@ -16,14 +23,25 @@
 ;;; input validation
 ;;; ----------------
 
-(defun validate-input (command args opts)
+(defun validate-input (command args stdin-bytes opts)
   (if (not (is-command command))
     `#(error #(exec invalid-command ,command))
     (if (not (is-args args))
       `#(error #(exec invalid-args ,args))
-      (validate-opts command args opts))))
+      (case (validate-stdin stdin-bytes)
+        (`#(ok ,validated-stdin)
+         (validate-opts command args validated-stdin opts))
+        (err err)))))
 
-(defun validate-opts (command args opts)
+(defun validate-stdin
+  (('no-stdin)
+   `#(ok no-stdin))
+  ((stdin-bytes) (when (is_binary stdin-bytes))
+   `#(ok ,stdin-bytes))
+  ((other)
+   `#(error #(exec invalid-stdin ,other))))
+
+(defun validate-opts (command args stdin-bytes opts)
   (if (not (is_map opts))
     `#(error #(exec invalid-options ,opts))
     (let ((timeout-ms (maps:get 'timeout-ms opts 'undefined))
@@ -40,6 +58,7 @@
                `#(ok
                   #M(command ,resolved-command
                              args ,args
+                             stdin-bytes ,stdin-bytes
                              timeout-ms ,timeout-ms
                              kill-timeout-sec ,kill-timeout-sec
                              output-limit-bytes ,output-limit-bytes)))
@@ -86,19 +105,48 @@
           (timeout-ms (maps:get 'timeout-ms validated))
           (kill-timeout-sec (maps:get 'kill-timeout-sec validated))
           (output-limit-bytes (maps:get 'output-limit-bytes validated))
+          (stdin-bytes (maps:get 'stdin-bytes validated))
           (argv (cons command args))
-          (options
-            (list 'monitor 'stdout 'stderr 'kill_group
-                  (tuple 'group 0)
-                  (tuple 'kill_timeout kill-timeout-sec)))
+          (options (run-options kill-timeout-sec stdin-bytes))
           (started-at (now-ms)))
     (case (exec:run argv options)
       (`#(ok ,pid ,os-pid)
-       (collect-until-exit pid os-pid timeout-ms kill-timeout-sec
-                           output-limit-bytes
-                           (empty-capture output-limit-bytes) started-at))
+       (case (send-stdin pid stdin-bytes)
+         ('ok
+          (collect-until-exit pid os-pid timeout-ms kill-timeout-sec
+                              output-limit-bytes
+                              (empty-capture output-limit-bytes) started-at))
+         (`#(error ,reason)
+          (let ((_stop-result (exec:stop pid)))
+            `#(error #(exec stdin-send-failed ,reason))))))
       (`#(error ,reason)
        `#(error #(exec start-failed ,reason))))))
+
+(defun run-options
+  ((kill-timeout-sec 'no-stdin)
+   (base-run-options kill-timeout-sec))
+  ((kill-timeout-sec _stdin-bytes)
+   (cons 'stdin (base-run-options kill-timeout-sec))))
+
+(defun base-run-options (kill-timeout-sec)
+  (list 'monitor 'stdout 'stderr 'kill_group
+        (tuple 'group 0)
+        (tuple 'kill_timeout kill-timeout-sec)))
+
+(defun send-stdin
+  ((_pid 'no-stdin) 'ok)
+  ((pid stdin-bytes)
+   (case (safe-exec-send pid stdin-bytes)
+     ('ok
+      (safe-exec-send pid 'eof))
+     (err err))))
+
+(defun safe-exec-send (pid data)
+  (try
+    (exec:send pid data)
+    (catch
+      (`#(,class ,reason ,stacktrace)
+       `#(error #(,class ,reason ,stacktrace))))))
 
 (defun collect-until-exit (pid os-pid
                                timeout-ms
