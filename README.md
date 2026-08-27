@@ -54,8 +54,9 @@ for the full definition of done, non-goals, and arc roadmap.
 **Pre-alpha.** `arc01-exec-substrate` is closed. `arc02-gate-pipeline` has
 implemented parser/grounder/engine gate classification, workspaces, public
 planning, dispatch supervision, and the explicit verification-boundary
-disposition. `arc03-stdio-pipeline` is paused because current Chengdu 0.3.0
-local binaries do not support input path `-` for parser, grounder, or engine.
+disposition. `arc03-stdio-pipeline` has resumed after current Chengdu
+`release/0.3.x` proved the supported artifact stdio contract; the active
+Slice02 work is Wolong-owned stdin bytes plus EOF support in `wolong-exec`.
 `arc04-provisioning` is still future work.
 
 Remote CI uses Wolong-owned fixtures and does not depend on a sibling Chengdu

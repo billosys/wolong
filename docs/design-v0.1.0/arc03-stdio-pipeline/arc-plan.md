@@ -29,26 +29,27 @@ diagnostics cannot deadlock Wolong; timeouts kill the full OS process group;
 and public `wolong:plan/2,3` still returns solved, unsolvable, or typed gate
 errors with the verification boundary explicit.
 
-Slice01 is investigation-first. If the live Chengdu docs/binaries do not
-support the needed stdio contract, or if a bug prevents safe supervised use,
-Wolong pauses and the finding is routed to Chengdu instead of building a
-Wolong workaround around a broken process boundary.
+Slice01 was investigation-first and originally paused the arc on a Chengdu
+input-stdin blocker. Current Chengdu `release/0.3.x` evidence at `e55ef5fd`
+has moved that blocker: the supported artifact pipeline now works through
+stdin/stdout/stderr. Arc03 therefore resumes at Slice02, whose active blocker
+is Wolong-owned runner support for stdin bytes plus EOF.
 
 ## 2. Slice breakdown
 
 | Slice | Slug | Scope (one line) | Load-bearing for |
 |-------|------|------------------|------------------|
 | slice01 | `stdio-contract-investigation` | Survey and probe the current Chengdu docs/binaries plus erlexec/LFE mechanics for stdin/stdout/stderr pipeline feasibility; classify the result as proceed, Wolong-design-needed, or Chengdu-blocked. | all arc03 slices |
-| slice02 | `stdio-runner` | Extend or add a Wolong-owned erlexec runner surface for stdin input, stdout artifact capture/streaming, stderr status capture, timeout cleanup, and backpressure-safe process termination. | slice03, slice04 |
+| slice02 | `stdio-runner` | Extend or add a Wolong-owned erlexec runner surface for stdin bytes plus EOF while preserving separated stdout/stderr capture, typed results, output caps, timeout cleanup, and shell-free argv execution. | slice03, slice04 |
 | slice03 | `stdio-gate-pipeline` | Rework the internal gate pipeline to pass parser and grounder artifacts through the supported stdio contract while preserving typed status/exit classification and workspace hygiene. | slice04 |
 | slice04 | `real-binary-public-plan` | Prove public `wolong:plan/2,3` and parser-only `wolong:validate/2` against real local Chengdu 0.3.0 binaries through the stdio path, with CI-safe fixtures that model the same contract honestly. | project W1-W4; arc04 |
 | slice05 | `backpressure-timeout-hardening` | Add focused stress and failure coverage for large stdout artifacts, stderr diagnostics, partial output, TERM-resistant children, and recovery after failed stdio dispatches if Slice01/02 show this needs its own slice. | release confidence |
 
-Sizing judgment: Slice01 may change the later slice count. If it finds a
-Chengdu blocker, this arc pauses before implementation. If erlexec/LFE stdio
-mechanics are simpler than expected, Slice05 may collapse into Slice02/03. If
-streaming/backpressure is subtle, keep Slice05 separate so the runner and
-pipeline slices stay reviewable.
+Sizing judgment: Slice01 already changed the arc once by pausing on Chengdu,
+and the 2026-08-26 re-entry evidence now resumes the arc at Slice02. If
+erlexec/LFE stdio mechanics are simpler than expected, Slice05 may collapse
+into Slice02/03. If streaming/backpressure is subtle, keep Slice05 separate so
+the runner and pipeline slices stay reviewable.
 
 ## 3. Dependencies
 
@@ -82,11 +83,13 @@ pipeline slices stay reviewable.
 
 ## 4. Open questions
 
-- **OQ1 - resolved by slice01:** Current Chengdu 0.3.0 local binaries accept
-  filesystem input paths only. `--output -` is supported for artifact stdout,
-  but input path `-` is rejected as `cli_usage_error` for parser domain input,
-  parser problem input, parser both-input attempts, grounder input, and engine
-  input.
+- **OQ1 - re-resolved by Chengdu re-entry evidence:** Current Chengdu
+  `release/0.3.x` at `e55ef5fd` supports the required artifact stdio path.
+  Local `make test-contract-stdio-managed` passed 187/0 on 2026-08-26:
+  parser one-input stdin works for `domain -` and `problem -`; parser `- -`
+  remains a documented `cli_usage_error`; grounder reads artifact stdin and
+  emits artifact stdout; engine reads artifact stdin and emits solved plan
+  stdout or no-plan `status=domain_no_plan`/exit `2`.
 - **OQ2 - resolved by slice01:** Artifact stdout is clean on supervised
   success paths when `--status=stderr` is selected. Chengdu also rejects
   `--status=stdout` with `--output -` as a usage error instead of mixing status
@@ -96,20 +99,20 @@ pipeline slices stay reviewable.
   `exec:send(PidOrOsPid, eof)` to close stdin, and separate stdout/stderr
   message delivery when pty mode is not used. Wolong's current runner does not
   expose stdin yet, but the substrate is technically available.
-- **OQ4 - open for any resumed implementation:** Current real fixture artifacts
-  are small enough for investigation, but a resumed stdio runner still needs an
-  explicit bounded-memory versus stream-to-file policy and concurrent draining
-  of stdout/stderr.
+- **OQ4 - open for Slice02/Slice05:** Current real fixture artifacts are small
+  enough for investigation, but the stdio runner still needs explicit bounded
+  capture behavior and concurrent draining of stdout/stderr. Slice02 owns the
+  existing bounded-capture policy for stdin runs; Slice05 remains available if
+  larger artifact/backpressure stress deserves its own hardening slice.
 - **OQ5 - resolved by slice01:** CI should continue using strict
   Wolong-owned fixtures. Real Chengdu binary probes remain optional local
   evidence until release artifacts are available to CI; remote CI must not
   depend on a sibling `../chengdu` checkout.
-- **OQ6 - resolved by slice01:** Wolong re-entry requires Chengdu to document
-  and implement input stdin for the supported parser, grounder, and engine
-  surfaces, including unambiguous parser role semantics for two HDDL inputs, or
-  the project must explicitly rescope Arc03 to a file-input plus stdout-artifact
-  temporary-file bridge. Chengdu-facing handoff:
-  `chengdu-stdin-contract-blocker.md`.
+- **OQ6 - resolved by 2026-08-26 re-entry:** Chengdu now documents and proves
+  the supported artifact stdio contract. The parser role semantics are
+  intentionally narrower than the original hope: exactly one parser HDDL input
+  may be `-`; both inputs as `- -` are unsupported. Arc03 can resume without a
+  Wolong rescope, but Slice03 must encode that caveat explicitly.
 
 ## 5. Arc ledger
 
@@ -126,6 +129,15 @@ pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.2 - 2026-08-26 (surfaced by Chengdu re-entry evidence).** Arc03 resumes
+  after current Chengdu `release/0.3.x` at `e55ef5fd` proves the supported
+  artifact stdio contract. Local `make test-contract-stdio-managed` passes
+  187/0, including parser one-input stdin, grounder stdin, engine stdin,
+  solved pipeline, and no-plan pipeline. Parser `- -` remains unsupported and
+  must not be assumed by Wolong. The active Slice02 blocker is now Wolong's
+  runner: add stdin bytes plus EOF under erlexec while preserving separated
+  captures, typed results, output caps, timeout cleanup, and argv-list
+  execution.
 - **v1.1 - 2026-08-20 (surfaced by slice01).** Slice01 classifies Arc03 as
   **Chengdu-blocked** for the release-critical stdin pipeline: current Chengdu
   docs and binaries support artifact stdout with status on stderr, but do not

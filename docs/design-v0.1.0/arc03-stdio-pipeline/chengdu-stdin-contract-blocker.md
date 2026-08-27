@@ -4,7 +4,24 @@ Date: 2026-08-20.
 
 Source: Wolong Arc03 Slice01, `stdio-contract-investigation`.
 
-Status: Wolong is paused before `slice02-stdio-runner`.
+Status: Superseded 2026-08-26 by Chengdu `release/0.3.x` re-entry evidence.
+Wolong Arc03 has resumed at `slice02-stdio-runner`.
+
+## Superseded status
+
+This report remains the historical record of the 2026-08-20 blocker. It is no
+longer the live Wolong gate.
+
+Current Chengdu `release/0.3.x` at `e55ef5fd` now proves the supported artifact
+stdio contract: `make test-contract-stdio-managed` passes 187/0; parser accepts
+exactly one stdin HDDL input (`domain -` or `problem -`); parser `- -` remains
+a documented `cli_usage_error`; grounder accepts artifact stdin; engine accepts
+artifact stdin and preserves solved/no-plan status behavior.
+
+The active Arc03 blocker is now Wolong-owned: extend `wolong-exec` with stdin
+bytes plus EOF support while preserving argv-list erlexec execution, separated
+stdout/stderr capture, output bounds, typed classification, timeout cleanup,
+and no shell command strings.
 
 ## Summary
 
@@ -120,15 +137,15 @@ The shell pipeline also caused the upstream process to see a broken pipe once
 the downstream process rejected stdin. That is expected fallout from the
 downstream `cli_usage_error`, not the root cause.
 
-## Where Wolong is paused
+## Historical pause point
 
-Wolong is paused in:
+Wolong was paused in:
 
 ```text
 docs/design-v0.1.0/arc03-stdio-pipeline/
 ```
 
-The paused slice is:
+The paused slice was:
 
 ```text
 slice01-stdio-contract-investigation
@@ -140,13 +157,13 @@ Accepted decision:
 Chengdu-blocked
 ```
 
-The next planned Wolong slice, `slice02-stdio-runner`, must not start while the
-Chengdu input contract is missing. erlexec supports stdin/stdout/stderr
-mechanics, and Wolong can extend its runner later, but doing so now would only
-produce a runner with no supported Chengdu process contract to drive.
+The next planned Wolong slice, `slice02-stdio-runner`, was not allowed to start
+while the Chengdu input contract was missing. The 2026-08-26 re-entry evidence
+supersedes that stop condition.
 
-Project W1 remains open. Arc04 provisioning must not start from a claim that
-release-grade stdin pipeline behavior is proven.
+Project W1 remains open. Arc04 provisioning still must not start from a claim
+that Wolong's public release-grade stdin pipeline behavior is proven; Chengdu
+side readiness is only one dependency.
 
 ## What Wolong needs from Chengdu
 
@@ -244,9 +261,9 @@ exit 2
 PANDAPI_STATUS	status=domain_no_plan	...	outcome=no_plan
 ```
 
-## Wolong re-entry condition
+## Original Wolong re-entry condition
 
-Wolong may resume Arc03 when one of these is true:
+Wolong could resume Arc03 when one of these became true:
 
 - Chengdu documents and implements input stdin for `pandapi-parser`,
   `pandapi-grounder`, and `pandapi-engine`, including parser role semantics for
@@ -254,8 +271,9 @@ Wolong may resume Arc03 when one of these is true:
 - Wolong explicitly rescopes Arc03 from a stdin pipeline to a file-input plus
   stdout-artifact temporary-file bridge.
 
-Until then, Wolong should remain paused rather than implementing a workaround
-around an unsupported process boundary.
+The first condition is now satisfied by current Chengdu `release/0.3.x`
+evidence, with the parser caveat that exactly one HDDL input may be stdin and
+`- -` remains unsupported.
 
 ## Supporting Wolong evidence
 
