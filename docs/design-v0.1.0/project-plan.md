@@ -133,8 +133,9 @@ consumer side of chengdu's provenance manifest.
   parser -> grounder -> engine pipeline through stdout/stdin artifact bytes:
   parser uses domain/problem paths with `--output -`, grounder reads parser
   stdout from stdin, and engine reads grounder stdout from stdin. The parser
-  `- -` caveat remains unchanged. Slice04 is next for real-binary public-plan
-  proof.
+  `- -` caveat remains unchanged. Slice04 is open for real-binary public-plan
+  proof against the current local Chengdu 0.3.0 binaries; Arc04 still owns
+  clean-machine release provisioning and checksum/provenance composition.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -155,6 +156,13 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.11 - 2026-08-27 (surfaced by arc03 slice04 opening).** Arc03 Slice04 is
+  opened to turn Slice03's local smoke into a repeatable real-binary
+  public-boundary proof. The proof target is public `wolong:plan/2`,
+  `wolong:plan/3`, and parser-only `wolong:validate/2` against current local
+  Chengdu 0.3.0 binaries. Remote CI remains fixture-backed unless release
+  artifacts are explicitly added; clean-machine binary acquisition,
+  checksum verification, and release provenance remain Arc04 responsibilities.
 - **v1.10 - 2026-08-26 (surfaced by arc03 slice03 close).** Wolong's internal
   planning pipeline now uses the release-grade stdio artifact shape. Parser
   stdout feeds grounder stdin, grounder stdout feeds engine stdin, and engine
