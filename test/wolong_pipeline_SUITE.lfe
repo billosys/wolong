@@ -158,7 +158,7 @@
       (equal 'artifact-truncated (element 2 reason))
       (equal 65536 (byte_size (map-get engine 'stdout)))
       (equal 'true (map-get engine 'stdout-truncated))
-      (equal 'false (map-get engine 'stderr-truncated))
+      (equal 'true (map-get engine 'stderr-truncated))
       (equal #b("ok") (map-get (map-get engine 'status-fields) 'status)))))
 
 ;;; ----------------

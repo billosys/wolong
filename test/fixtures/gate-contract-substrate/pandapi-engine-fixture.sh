@@ -83,8 +83,17 @@ if grep -q 'engine-output-flood' "$input"; then
         printf 'x'
         i=$((i + 1))
     done
-    printf 'bounded stderr diagnostic\n' >&2
-    status ok 0 success complete artifact=stdout outcome=solved $input_fields
+    printf 'PANDAPI_STATUS\tstatus=ok\tcomponent=engine\tsurface=normal_search\tsurface_disposition=supported\texit_code=0\tclass=success\tpartial_output_policy=complete\tartifact=stdout\toutcome=solved' >&2
+    for field in $input_fields; do
+        printf '\t%s' "$field" >&2
+    done
+    printf '\tdiagnostic=' >&2
+    i=0
+    while [ "$i" -lt 70000 ]; do
+        printf 'y' >&2
+        i=$((i + 1))
+    done
+    printf '\n' >&2
     exit 0
 fi
 
