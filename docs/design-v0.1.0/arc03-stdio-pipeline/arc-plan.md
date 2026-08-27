@@ -31,9 +31,9 @@ errors with the verification boundary explicit.
 
 Slice01 was investigation-first and originally paused the arc on a Chengdu
 input-stdin blocker. Current Chengdu `release/0.3.x` evidence at `e55ef5fd`
-has moved that blocker: the supported artifact pipeline now works through
-stdin/stdout/stderr. Arc03 therefore resumes at Slice02, whose active blocker
-is Wolong-owned runner support for stdin bytes plus EOF.
+moved that blocker, Slice02 added Wolong runner support for stdin bytes plus
+EOF, and Slice03 now wires Wolong's internal parser -> grounder -> engine
+pipeline through the supported stdio artifact path.
 
 ## 2. Slice breakdown
 
@@ -99,11 +99,11 @@ the runner and pipeline slices stay reviewable.
   bytes, EOF delivery, separated stdout/stderr capture, output caps, nonzero
   completed exits, timeout cleanup, and recovery. `wolong-exec:run/3` remains
   the no-stdin compatibility API.
-- **OQ4 - partially resolved by slice02; open for Slice05:** Slice02 proves
-  the existing bounded-capture policy and concurrent stdout/stderr draining for
-  fixture-scale stdin runs. Slice05 remains available for larger
-  artifact/backpressure stress if Slice03 shows release-scale artifacts need a
-  separate hardening pass.
+- **OQ4 - partially resolved by slice02/slice03; open for Slice05:** Slice02
+  proves bounded capture and concurrent stdout/stderr draining for
+  fixture-scale stdin runs. Slice03 additionally rejects truncated stdout
+  artifacts as typed `artifact-truncated` gate errors. Slice05 remains
+  available for larger artifact/backpressure stress under release-scale load.
 - **OQ5 - resolved by slice01:** CI should continue using strict
   Wolong-owned fixtures. Real Chengdu binary probes remain optional local
   evidence until release artifacts are available to CI; remote CI must not
@@ -129,6 +129,15 @@ the runner and pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.5 - 2026-08-26 (surfaced by slice03 close).** Slice03 lands the
+  Wolong-owned stdio gate pipeline: parser runs with domain/problem paths and
+  `--output -`; parser stdout feeds grounder stdin; grounder stdout feeds
+  engine stdin; engine stdout becomes the durable public plan payload before
+  workspace cleanup. Engine `domain_no_plan`/exit `2` with empty stdout remains
+  public `#(unsolvable Detail)`. Parser `- -`, split parser workers, framed
+  stdin, and artifact merge protocols remain deferred. Slice04 can now focus
+  on real-binary public-plan proof; Slice05 remains reserved for release-scale
+  backpressure hardening.
 - **v1.4 - 2026-08-26 (surfaced by slice03 opening).** Slice03 is opened with
   the agreed parser boundary clarified: the common release case is domain and
   problem paths into one parser invocation, parser artifact stdout into

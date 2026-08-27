@@ -128,12 +128,13 @@ consumer side of chengdu's provenance manifest.
   at `e55ef5fd` moves that blocker: `make test-contract-stdio-managed` passes
   187/0, parser supports exactly one `-` input (`domain -` or `problem -`),
   parser `- -` remains a documented usage error, and grounder/engine accept
-  artifact stdin with artifact stdout and final status on stderr. Slice02 now
-  lands `wolong-exec:run-stdin/4`, which exposes stdin bytes plus EOF under
-  erlexec while preserving argv-list execution, separated stdout/stderr
-  capture, typed classification substrate, output bounds, timeout cleanup, and
-  no shell command strings. Slice03 is now open to wire gate artifacts through
-  the stdio path without changing the parser `- -` caveat.
+  artifact stdin with artifact stdout and final status on stderr. Slice02
+  landed `wolong-exec:run-stdin/4`, and Slice03 now wires the internal
+  parser -> grounder -> engine pipeline through stdout/stdin artifact bytes:
+  parser uses domain/problem paths with `--output -`, grounder reads parser
+  stdout from stdin, and engine reads grounder stdout from stdin. The parser
+  `- -` caveat remains unchanged. Slice04 is next for real-binary public-plan
+  proof.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -154,6 +155,14 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.10 - 2026-08-26 (surfaced by arc03 slice03 close).** Wolong's internal
+  planning pipeline now uses the release-grade stdio artifact shape. Parser
+  stdout feeds grounder stdin, grounder stdout feeds engine stdin, and engine
+  stdout is captured as the durable public plan payload before workspace
+  cleanup. Engine `domain_no_plan`/exit `2` with empty stdout still maps to
+  public `#(unsolvable Detail)`. Local real-Chengdu public-plan smokes passed
+  for solved and no-plan cases, while remote CI remains fixture-backed. Arc03
+  advances to Slice04 real-binary public-plan proof.
 - **v1.9 - 2026-08-26 (surfaced by arc03 slice03 opening).** Arc03 Slice03 is
   opened as the stdio gate-pipeline implementation slice. The intended
   near-term release shape is parser file/path inputs with parser artifact on
