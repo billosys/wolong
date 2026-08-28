@@ -1,0 +1,4 @@
+; force-engine-missing-status
+(define (domain wolong-missing-status)
+  (:requirements :strips)
+)

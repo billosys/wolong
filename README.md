@@ -20,10 +20,16 @@ pandapi-parser -> pandapi-grounder -> pandapi-engine
 ```
 
 `wolong` classifies each gate from the process exit code plus final
-`PANDAPI_STATUS` fields. A solved engine run returns `#(ok Plan)`, a valid
-engine no-plan outcome returns `#(unsolvable Detail)`, and gate, workspace,
-binary, timeout, and dispatch failures return typed `#(error #(Boundary Reason
-Detail))` tuples.
+`PANDAPI_STATUS` fields. Stdout is the gate artifact channel: parser and
+grounder stdout feed the next process, and engine stdout becomes the public
+plan payload. Stderr is the diagnostic/status channel: returned diagnostics
+are bounded, and Wolong also keeps a bounded stderr tail so final
+`PANDAPI_STATUS` classification survives noisy diagnostics before the status
+line. A solved engine run returns `#(ok Plan)`, a valid engine no-plan outcome
+returns `#(unsolvable Detail)`, and gate, workspace, binary, timeout, and
+dispatch failures return typed `#(error #(Boundary Reason Detail))` tuples.
+Truncated stdout artifacts are typed gate errors and are never used as partial
+downstream artifacts or solved plans.
 
 Solved `Plan` maps include the durable engine plan payload and explicit
 `verification-boundary` metadata. Today that boundary says
@@ -55,14 +61,13 @@ public-facing documentation on `main`.
 
 ## Status
 
-**Pre-alpha.** `arc01-exec-substrate` is closed. `arc02-gate-pipeline` has
-implemented parser/grounder/engine gate classification, workspaces, public
-planning, dispatch supervision, and the explicit verification-boundary
-disposition. `arc03-stdio-pipeline` has resumed after current Chengdu
-`release/0.3.x` proved the supported artifact stdio contract, and Slice02
-landed Wolong-owned stdin bytes plus EOF support in `wolong-exec`. Slice03 is
-open to wire parser, grounder, and engine gate artifacts through the stdio
-path. `arc04-provisioning` is still future work.
+**Pre-alpha.** `arc01-exec-substrate` and `arc02-gate-pipeline` are closed.
+`arc03-stdio-pipeline` has implemented the artifact stdio chain through the
+public planning API, proved it against local Chengdu `release/0.3.x`
+binaries when available, and now includes fixture-backed stress coverage for
+larger stdout artifacts, noisy stderr before final status, stdout truncation,
+flooding timeouts, process-group cleanup, and post-failure recovery.
+`arc04-provisioning` is still future work.
 
 Remote CI uses Wolong-owned fixtures and does not depend on a sibling Chengdu
 checkout.
@@ -70,8 +75,8 @@ checkout.
 ## Dev Setup
 
 `wolong` locates pandaPI binaries via configuration (see
-[`config/sys.config`](config/sys.config): `binaries`, `gate-timeouts`, and
-`workdir`) and does not build them itself.
+[`config/sys.config`](config/sys.config): `binaries`, `gate-timeouts`,
+optional `output-limits`, and `workdir`) and does not build them itself.
 
 For local development against a sibling Chengdu checkout, point the `binaries`
 config map at:
@@ -85,6 +90,12 @@ config map at:
 Release download, checksum verification, and clean-machine binary provisioning
 belong to Arc04. Until then, manual binary placement is a development setup
 step, not a Wolong runtime dependency.
+
+`output-limits` is optional. If omitted, the runner keeps the compatibility
+default `output-limit-bytes=65536` for both streams. When configured, each
+gate may set independent positive byte limits for `stdout` and `stderr`.
+Use larger stdout limits for expected artifact scale and stderr limits for
+diagnostic preview size.
 
 Build and test locally:
 

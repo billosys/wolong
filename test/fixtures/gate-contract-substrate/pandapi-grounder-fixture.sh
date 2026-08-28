@@ -39,6 +39,15 @@ write_artifact() {
     fi
 }
 
+large_payload() {
+    i=0
+    while [ "$i" -lt 70000 ]; do
+        printf 'g'
+        i=$((i + 1))
+    done
+    printf '\n'
+}
+
 if [ "$input" = "-" ]; then
     cat >"$scratch" || {
         status input_unavailable 20 caller_error absent path=- path_role=htn operation=read
@@ -60,7 +69,35 @@ if grep -q 'malformed' "$input"; then
     exit 22
 fi
 
-if grep -q 'engine-invalid' "$input"; then
+if grep -q 'large-grounder' "$input"; then
+    {
+        printf 'fixture grounder artifact\nlarge-grounder\n'
+        large_payload
+    } | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'large-engine' "$input"; then
+    printf 'fixture grounder artifact\nlarge-engine\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'engine-noisy-stderr' "$input"; then
+    printf 'fixture grounder artifact\nengine-noisy-stderr\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'engine-missing-status' "$input"; then
+    printf 'fixture grounder artifact\nengine-missing-status\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'engine-flood-timeout' "$input"; then
+    printf 'fixture grounder artifact\nengine-flood-timeout\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'engine-invalid' "$input"; then
     printf 'fixture grounder artifact\nmalformed\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21

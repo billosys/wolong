@@ -1,0 +1,4 @@
+; force-large-parser
+(define (domain wolong-large-parser)
+  (:requirements :strips)
+)

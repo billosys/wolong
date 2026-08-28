@@ -11,7 +11,8 @@
   (application:set_env 'wolong 'binaries (map 'parser "/usr/bin/true"))
   (application:set_env 'wolong 'gate-timeouts (map 'parse 5000))
   (application:set_env 'wolong 'workdir
-                       (map 'base-dir "/tmp/wolong" 'keep-artifacts 'false)))
+                       (map 'base-dir "/tmp/wolong" 'keep-artifacts 'false))
+  (application:unset_env 'wolong 'output-limits))
 
 ;;; ----------------
 ;;; happy path
@@ -25,6 +26,38 @@
          #M(parser "/usr/bin/true")
          gate-timeouts
          #M(parse 5000)
+         workdir
+         #M(base-dir "/tmp/wolong"
+                     keep-artifacts
+                     false)))
+    (wolong-config:validate)))
+
+(deftest validate-optional-output-limits
+  (set-valid-env)
+  (application:set_env 'wolong
+                       'output-limits
+                       (map 'parser (map 'stdout 1048576 'stderr 65536)
+                            'grounder (map 'stdout 1048576 'stderr 32768)
+                            'engine (map 'stdout 2097152 'stderr 65536)))
+  (is-equal
+    `#(ok
+       #M(binaries
+         #M(parser "/usr/bin/true")
+         gate-timeouts
+         #M(parse 5000)
+         output-limits
+         #M(parser
+           #M(stdout 1048576
+                     stderr
+                     65536)
+           grounder
+           #M(stdout 1048576
+                     stderr
+                     32768)
+           engine
+           #M(stdout 2097152
+                     stderr
+                     65536))
          workdir
          #M(base-dir "/tmp/wolong"
                      keep-artifacts
@@ -74,6 +107,28 @@
                             'keep-artifacts
                             'not-a-boolean))
   (is-equal `#(error #(config wrong-shape workdir)) (wolong-config:validate)))
+
+(deftest validate-output-limits-wrong-shape
+  (set-valid-env)
+  (application:set_env 'wolong 'output-limits '(not a map))
+  (is-equal `#(error #(config wrong-shape output-limits))
+            (wolong-config:validate)))
+
+(deftest validate-output-limits-non-positive-limit
+  (set-valid-env)
+  (application:set_env 'wolong
+                       'output-limits
+                       (map 'engine (map 'stdout 0 'stderr 65536)))
+  (is-equal `#(error #(config wrong-shape output-limits))
+            (wolong-config:validate)))
+
+(deftest validate-output-limits-unknown-stream
+  (set-valid-env)
+  (application:set_env 'wolong
+                       'output-limits
+                       (map 'engine (map 'diagnostics 65536)))
+  (is-equal `#(error #(config wrong-shape output-limits))
+            (wolong-config:validate)))
 
 ;;; ----------------
 ;;; non-string-path

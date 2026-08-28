@@ -1,0 +1,4 @@
+; force-large-grounder
+(define (domain wolong-large-grounder)
+  (:requirements :strips)
+)

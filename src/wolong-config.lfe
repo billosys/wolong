@@ -6,7 +6,11 @@
 ;;; public API
 ;;; ----------------
 
-(defun validate () (validate-keys (required-keys) (map)))
+(defun validate ()
+  (case (validate-keys (required-keys) (map))
+    (`#(ok ,config)
+     (validate-optional-output-limits config))
+    (err err)))
 
 ;;; ----------------
 ;;; config surface
@@ -33,7 +37,9 @@
   (('gate-timeouts value)
    (validate-gate-timeouts value))
   (('workdir value)
-   (validate-workdir value)))
+   (validate-workdir value))
+  (('output-limits value)
+   (validate-output-limits value)))
 
 ;;; ----------------
 ;;; binaries: map of component (atom) -> path (string)
@@ -90,9 +96,59 @@
           `#(ok ,value))))))
 
 ;;; ----------------
+;;; output-limits: optional map of gate -> stream -> positive byte limit
+;;; ----------------
+
+(defun validate-optional-output-limits (config)
+  (case (application:get_env 'wolong 'output-limits)
+    ('undefined
+     `#(ok ,config))
+    (`#(ok ,value)
+     (case (validate-value 'output-limits value)
+       (`#(ok ,validated)
+        `#(ok ,(maps:put 'output-limits validated config)))
+       (err err)))))
+
+(defun validate-output-limits (value)
+  (if (is_map value)
+    (validate-output-limit-gates (maps:to_list value) (map))
+    `#(error #(config wrong-shape output-limits))))
+
+(defun validate-output-limit-gates
+  (('() acc)
+   `#(ok ,acc))
+  ((`(#(,gate ,limits) . ,rest) acc)
+   (if (andalso (is_atom gate) (is_map limits))
+     (case (validate-output-limit-streams (maps:to_list limits) (map))
+       (`#(ok ,validated-limits)
+        (validate-output-limit-gates rest (maps:put gate validated-limits acc)))
+       (err err))
+     `#(error #(config wrong-shape output-limits)))))
+
+(defun validate-output-limit-streams
+  (('() acc)
+   `#(ok ,acc))
+  ((`(#(,stream ,limit) . ,rest) acc)
+   (case (valid-output-limit-stream? stream)
+     ('true
+      (if (positive-integer limit)
+        (validate-output-limit-streams rest (maps:put stream limit acc))
+        `#(error #(config wrong-shape output-limits))))
+     ('false
+      `#(error #(config wrong-shape output-limits))))))
+
+(defun valid-output-limit-stream?
+  (('stdout) 'true)
+  (('stderr) 'true)
+  ((_stream) 'false))
+
+;;; ----------------
 ;;; shared predicates
 ;;; ----------------
 
 (defun is-path-string (path)
   (orelse (is_binary path)
           (andalso (is_list path) (io_lib:printable_unicode_list path))))
+
+(defun positive-integer (value)
+  (andalso (is_integer value) (> value 0)))

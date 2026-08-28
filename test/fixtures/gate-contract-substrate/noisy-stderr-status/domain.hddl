@@ -1,0 +1,4 @@
+; force-engine-noisy-stderr
+(define (domain wolong-noisy-stderr-status)
+  (:requirements :strips)
+)

@@ -170,8 +170,19 @@
 
 (defun runner-opts (gate config)
   (let* ((gate-timeouts (maps:get 'gate-timeouts config))
-          (timeout-ms (maps:get (timeout-key gate) gate-timeouts)))
-    (map 'timeout-ms timeout-ms 'kill-timeout-sec 1 'output-limit-bytes 65536)))
+          (timeout-ms (maps:get (timeout-key gate) gate-timeouts))
+          (default-limit (default-output-limit-bytes))
+          (output-limits (maps:get 'output-limits config (map)))
+          (gate-limits (maps:get gate output-limits (map)))
+          (stdout-limit (maps:get 'stdout gate-limits default-limit))
+          (stderr-limit (maps:get 'stderr gate-limits default-limit)))
+    (map 'timeout-ms timeout-ms
+         'kill-timeout-sec 1
+         'output-limit-bytes default-limit
+         'stdout-limit-bytes stdout-limit
+         'stderr-limit-bytes stderr-limit)))
+
+(defun default-output-limit-bytes () 65536)
 
 (defun timeout-key
   (('parser) 'parse)
@@ -197,7 +208,7 @@
      `#(error
         #(signal-terminated ,(result-detail gate result (map) artifact-mode))))
     ('false
-     (case (wolong-status:parse (maps:get 'stderr result))
+     (case (wolong-status:parse (status-stderr result))
        (`#(ok ,fields)
         (classify-status gate
                          (maps:get 'exit-status result)
@@ -208,6 +219,13 @@
         `#(error
            #(missing-status ,reason
                             ,(result-detail gate result (map) artifact-mode))))))))
+
+(defun status-stderr (result)
+  (let ((stderr (maps:get 'stderr result #b()))
+         (stderr-tail (maps:get 'stderr-tail result #b())))
+    (case (wolong-status:parse stderr)
+      (`#(ok ,_fields) stderr)
+      (`#(error ,_reason) stderr-tail))))
 
 (defun classify-status (gate exit-status fields result artifact-mode)
   (case (exit-code-matches? exit-status fields)
@@ -299,10 +317,21 @@
        'os-pid (maps:get 'os-pid runner-result 'undefined)
        'exit-status (maps:get 'exit-status runner-result 'undefined)
        'signal (maps:get 'signal runner-result 'undefined)
+       'timed-out (maps:get 'timed-out runner-result 'false)
+       'timeout (maps:get 'timeout runner-result 'false)
+       'kill-timeout-sec (maps:get 'kill-timeout-sec runner-result 0)
+       'kill-result (maps:get 'kill-result runner-result 'undefined)
+       'kill-reason (maps:get 'kill-reason runner-result 'undefined)
+       'kill-escalated (maps:get 'kill-escalated runner-result 'false)
        'stdout (maps:get 'stdout runner-result #b())
        'stderr (maps:get 'stderr runner-result #b())
+       'stderr-tail (maps:get 'stderr-tail runner-result #b())
        'duration-ms (maps:get 'duration-ms runner-result 0)
        'output-limit-bytes (maps:get 'output-limit-bytes runner-result 0)
+       'stdout-limit-bytes (maps:get 'stdout-limit-bytes runner-result 0)
+       'stderr-limit-bytes (maps:get 'stderr-limit-bytes runner-result 0)
+       'stderr-tail-limit-bytes
+       (maps:get 'stderr-tail-limit-bytes runner-result 0)
        'stdout-bytes (maps:get 'stdout-bytes runner-result 0)
        'stderr-bytes (maps:get 'stderr-bytes runner-result 0)
        'stdout-truncated (maps:get 'stdout-truncated runner-result 'false)

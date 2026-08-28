@@ -43,6 +43,15 @@ write_artifact() {
     fi
 }
 
+large_payload() {
+    i=0
+    while [ "$i" -lt 70000 ]; do
+        printf 'p'
+        i=$((i + 1))
+    done
+    printf '\n'
+}
+
 if [ ! -r "$domain" ]; then
     status input_unavailable 20 caller_error absent path_role=domain operation=open
     exit 20
@@ -55,6 +64,39 @@ fi
 
 if grep -q 'force-grounder-invalid' "$domain"; then
     printf 'fixture parser artifact\nmalformed\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-large-parser' "$domain"; then
+    {
+        printf 'fixture parser artifact\nlarge-parser\n'
+        large_payload
+    } | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-large-grounder' "$domain"; then
+    printf 'fixture parser artifact\nlarge-grounder\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-large-engine' "$domain"; then
+    printf 'fixture parser artifact\nlarge-engine\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-engine-noisy-stderr' "$domain"; then
+    printf 'fixture parser artifact\nengine-noisy-stderr\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-engine-missing-status' "$domain"; then
+    printf 'fixture parser artifact\nengine-missing-status\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+elif grep -q 'force-engine-flood-timeout' "$domain"; then
+    printf 'fixture parser artifact\nengine-flood-timeout\n' | write_artifact || {
         status output_unavailable 21 caller_error absent path_role=output operation=open
         exit 21
     }

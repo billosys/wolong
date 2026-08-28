@@ -39,6 +39,33 @@ write_artifact() {
     fi
 }
 
+large_plan() {
+    printf 'fixture engine large plan\n'
+    i=0
+    while [ "$i" -lt 70000 ]; do
+        printf 'e'
+        i=$((i + 1))
+    done
+    printf '\n'
+}
+
+diagnostic_noise() {
+    i=0
+    while [ "$i" -lt 2000 ]; do
+        printf 'diagnostic-before-status-%04d\n' "$i" >&2
+        i=$((i + 1))
+    done
+}
+
+flood_streams() {
+    i=0
+    while [ "$i" -lt 5000 ]; do
+        printf 'stdout-flood-%04d\n' "$i"
+        printf 'stderr-flood-%04d\n' "$i" >&2
+        i=$((i + 1))
+    done
+}
+
 if [ "$input" = "-" ]; then
     cat >"$scratch" || {
         status input_unavailable 20 caller_error absent path=- path_role=engine_input operation=read
@@ -73,8 +100,39 @@ if grep -q 'engine-timeout' "$input"; then
     sleep 30
 fi
 
+if grep -q 'engine-flood-timeout' "$input"; then
+    flood_streams
+    trap '' TERM
+    sleep 30
+fi
+
 if grep -q 'slow-success' "$input"; then
     sleep 1
+fi
+
+if grep -q 'large-engine' "$input"; then
+    large_plan | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+    status ok 0 success complete artifact=stdout outcome=solved $input_fields
+    exit 0
+fi
+
+if grep -q 'engine-noisy-stderr' "$input"; then
+    diagnostic_noise
+    printf 'fixture engine plan\n' | write_artifact || {
+        status output_unavailable 21 caller_error absent path_role=output operation=open
+        exit 21
+    }
+    status ok 0 success complete artifact=stdout outcome=solved $input_fields
+    exit 0
+fi
+
+if grep -q 'engine-missing-status' "$input"; then
+    diagnostic_noise
+    printf 'fixture engine plan\n' | write_artifact || exit 21
+    exit 0
 fi
 
 if grep -q 'engine-output-flood' "$input"; then

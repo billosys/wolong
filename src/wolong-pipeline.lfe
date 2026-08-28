@@ -74,6 +74,14 @@
                               'parser parser-detail
                               'payload-error payload-detail)))
             workspace config))))
+      (`#(error #(,reason ,status-reason ,parser-detail))
+       (finish
+         `#(error
+            #(parser ,reason
+                     ,(map 'workspace workspace
+                           'parser parser-detail
+                           'status-error status-reason)))
+         workspace config))
       (`#(error #(,reason ,parser-detail))
        (finish
          `#(error
@@ -115,6 +123,15 @@
                      ,(map 'workspace workspace
                            'parser parser-detail
                            'grounder grounder-detail)))
+       workspace config))
+    (`#(error #(,reason ,status-reason ,grounder-detail))
+     (finish
+       `#(error
+          #(grounder ,reason
+                     ,(map 'workspace workspace
+                           'parser parser-detail
+                           'grounder grounder-detail
+                           'status-error status-reason)))
        workspace config))))
 
 (defun run-engine-stage (engine engine-output
@@ -153,6 +170,16 @@
                 'parser parser-detail
                 'grounder grounder-detail
                 'engine engine-detail))
+       workspace config))
+    (`#(error #(,reason ,status-reason ,engine-detail))
+     (finish
+       `#(error
+          #(engine ,reason
+                   ,(map 'workspace workspace
+                         'parser parser-detail
+                         'grounder grounder-detail
+                         'engine engine-detail
+                         'status-error status-reason)))
        workspace config))
     (`#(error #(,reason ,engine-detail))
      (finish

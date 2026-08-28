@@ -1,0 +1,4 @@
+; force-large-engine
+(define (domain wolong-large-engine)
+  (:requirements :strips)
+)

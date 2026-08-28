@@ -258,7 +258,9 @@
           (value (result-value result)))
     (ok (element 1 result))
     (equal 25 (byte_size (result-get value 'stdout)))
-    (equal 25 (byte_size (result-get value 'stderr)))
+    (equal 40 (byte_size (result-get value 'stderr)))
+    (equal 25 (result-get value 'stdout-limit-bytes))
+    (equal 40 (result-get value 'stderr-limit-bytes))
     (equal 'true (result-get value 'stdout-truncated))
     (equal 'true (result-get value 'stderr-truncated))
     (not-true (=:= 25 (result-get value 'stdout-bytes)))
@@ -271,7 +273,9 @@
           (value (result-value result)))
     (ok (element 1 result))
     (equal 25 (byte_size (result-get value 'stdout)))
-    (equal 25 (byte_size (result-get value 'stderr)))
+    (equal 40 (byte_size (result-get value 'stderr)))
+    (equal 25 (result-get value 'stdout-limit-bytes))
+    (equal 40 (result-get value 'stderr-limit-bytes))
     (equal 'true (result-get value 'stdout-truncated))
     (equal 'true (result-get value 'stderr-truncated))
     (not-true (=:= 25 (result-get value 'stdout-bytes)))
@@ -285,7 +289,11 @@
   (map 'timeout-ms 1000 'kill-timeout-sec 1 'output-limit-bytes 65536))
 
 (defun small-output-opts ()
-  (map 'timeout-ms 1000 'kill-timeout-sec 1 'output-limit-bytes 25))
+  (map 'timeout-ms 1000
+       'kill-timeout-sec 1
+       'output-limit-bytes 65536
+       'stdout-limit-bytes 25
+       'stderr-limit-bytes 40))
 
 (defun fixture (name)
   (filename:join (list (project-root) "test" "fixtures" "exec-runner" name)))
