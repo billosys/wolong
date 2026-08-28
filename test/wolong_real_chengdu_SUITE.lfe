@@ -171,7 +171,11 @@
   (case (os:getenv env-name)
     ('false default)
     (path
-     (filename:absname path))))
+     (case (filename:pathtype path)
+       ('relative
+        (filename:absname (filename:join (project-root) path)))
+       (_
+        (filename:absname path))))))
 
 (defun sibling-path (leaf)
   (filename:absname (filename:join (list (project-root) ".." "chengdu" leaf))))
