@@ -136,11 +136,14 @@ consumer side of chengdu's provenance manifest.
   `- -` caveat remains unchanged. Slice04 adds a repeatable public-boundary
   Common Test proof against the current local Chengdu 0.3.0 binaries:
   `wolong:plan/3`, `wolong:plan/2`, and parser-only `wolong:validate/2`
-  prove out locally against sibling Chengdu `release/0.3.x` / `e55ef5fd`.
+  prove out locally against sibling Chengdu. CDC accepted Slice04 after
+  repairing relative real-binary env path resolution in commit `d2fbcdd`, and
+  reproduced the proof against local Chengdu `release/0.3.x` / `7066f63c`.
   Remote CI remains fixture-backed and may skip real-binary cases when Chengdu
-  binaries are absent. Slice05 remains available for release-scale
-  stdout/stderr and backpressure stress; Arc04 still owns clean-machine
-  release provisioning and checksum/provenance composition.
+  binaries are absent. Slice05 is open for release-scale stdout/stderr,
+  final-status preservation, truncation, and timeout/backpressure stress;
+  Arc04 still owns clean-machine release provisioning and checksum/provenance
+  composition.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -161,6 +164,15 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.13 - 2026-08-28 (surfaced by arc03 slice05 opening).** Slice05 opens
+  as the remaining Arc03 hardening slice before close readiness. It targets
+  larger stdout artifacts, noisy stderr before final `PANDAPI_STATUS`,
+  independently bounded artifact/diagnostic streams, typed stdout truncation,
+  flood-then-timeout cleanup, and recovery after failed stdio dispatches.
+  Slice04 is CDC-accepted after `d2fbcdd`, with local real-Chengdu public
+  proof reproduced against sibling Chengdu `release/0.3.x` / `7066f63c`.
+  Arc04 remains responsible for clean-machine binary acquisition, checksums,
+  provenance, and release artifacts.
 - **v1.12 - 2026-08-27 (surfaced by arc03 slice04 close).** Wolong now has a
   repeatable local real-binary public-boundary proof for current Chengdu
   0.3.0. `test/wolong_real_chengdu_SUITE.lfe` drives public `wolong:plan/3`,

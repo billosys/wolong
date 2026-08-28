@@ -34,7 +34,9 @@ input-stdin blocker. Current Chengdu `release/0.3.x` evidence at `e55ef5fd`
 moved that blocker, Slice02 added Wolong runner support for stdin bytes plus
 EOF, Slice03 wired Wolong's internal parser -> grounder -> engine pipeline
 through the supported stdio artifact path, and Slice04 now proves that same
-path at Wolong's public API boundary with real local Chengdu binaries.
+path at Wolong's public API boundary with real local Chengdu binaries. Slice05
+is open to harden the remaining stdout/stderr backpressure, truncation, final
+status preservation, and timeout-cleanup risks before Arc03 close.
 
 ## 2. Slice breakdown
 
@@ -44,13 +46,15 @@ path at Wolong's public API boundary with real local Chengdu binaries.
 | slice02 | `stdio-runner` | Extend or add a Wolong-owned erlexec runner surface for stdin bytes plus EOF while preserving separated stdout/stderr capture, typed results, output caps, timeout cleanup, and shell-free argv execution. | slice03, slice04 |
 | slice03 | `stdio-gate-pipeline` | Rework the internal gate pipeline so parser artifact stdout feeds grounder stdin and grounder artifact stdout feeds engine stdin, while parser still receives the supported two-input planning instance and typed status/exit classification remains intact. | slice04 |
 | slice04 | `real-binary-public-plan` | Prove public `wolong:plan/2,3` and parser-only `wolong:validate/2` against real local Chengdu 0.3.0 binaries through the stdio path, with CI-safe fixtures that model the same contract honestly. | project W1-W4; arc04 |
-| slice05 | `backpressure-timeout-hardening` | Add focused stress and failure coverage for large stdout artifacts, stderr diagnostics, partial output, TERM-resistant children, and recovery after failed stdio dispatches if Slice01/02 show this needs its own slice. | release confidence |
+| slice05 | `backpressure-timeout-hardening` | Add focused stress and failure coverage for large stdout artifacts, noisy stderr diagnostics, final status preservation, partial output, TERM-resistant children, and recovery after failed stdio dispatches. | release confidence; arc03 close |
 
 Sizing judgment: Slice01 already changed the arc once by pausing on Chengdu,
-and the 2026-08-26 re-entry evidence now resumes the arc at Slice02. If
-erlexec/LFE stdio mechanics are simpler than expected, Slice05 may collapse
-into Slice02/03. If streaming/backpressure is subtle, keep Slice05 separate so
-the runner and pipeline slices stay reviewable.
+and the 2026-08-26 re-entry evidence now resumes the arc at Slice02. Slice05
+is kept separate because the earlier slices proved fixture-scale and
+public-boundary behavior, but not larger-output or noisy-stderr stress. If
+Slice05 shows the current in-memory artifact model is insufficient, the close
+should bubble up a remediation slice or design decision rather than hide a
+streaming/spooling redesign inside this slice.
 
 ## 3. Dependencies
 
@@ -100,11 +104,11 @@ the runner and pipeline slices stay reviewable.
   bytes, EOF delivery, separated stdout/stderr capture, output caps, nonzero
   completed exits, timeout cleanup, and recovery. `wolong-exec:run/3` remains
   the no-stdin compatibility API.
-- **OQ4 - partially resolved by slice02/slice03; open for Slice05:** Slice02
-  proves bounded capture and concurrent stdout/stderr draining for
-  fixture-scale stdin runs. Slice03 additionally rejects truncated stdout
-  artifacts as typed `artifact-truncated` gate errors. Slice05 remains
-  available for larger artifact/backpressure stress under release-scale load.
+- **OQ4 - active in Slice05:** Slice02 proves bounded capture and concurrent
+  stdout/stderr draining for fixture-scale stdin runs. Slice03 additionally
+  rejects truncated stdout artifacts as typed `artifact-truncated` gate
+  errors. Slice05 now owns larger artifact/backpressure stress, noisy stderr
+  before final status, and timeout cleanup while pipes are active.
 - **OQ5 - resolved by slice01:** CI should continue using strict
   Wolong-owned fixtures. Real Chengdu binary probes remain optional local
   evidence until release artifacts are available to CI; remote CI must not
@@ -130,6 +134,15 @@ the runner and pipeline slices stay reviewable.
 
 ## 6. Version history
 
+- **v1.8 - 2026-08-28 (surfaced by slice05 opening).** Slice05 is opened as
+  the remaining Arc03 hardening slice. It targets larger stdout artifacts,
+  noisy stderr before final `PANDAPI_STATUS`, independently bounded
+  artifact/diagnostic streams, typed stdout truncation, flood-then-timeout
+  cleanup, and recovery after failed stdio dispatches. The scope explicitly
+  excludes a streaming/spooling architecture, parser `- -`, split parser
+  workers, release provisioning, and public API redesign; if stress evidence
+  shows those are required, Slice05 must bubble up a remediation decision
+  rather than smuggle it into the implementation.
 - **v1.7 - 2026-08-27 (surfaced by slice04 close).** Slice04 adds
   `test/wolong_real_chengdu_SUITE.lfe`, a focused Common Test proof that
   public `wolong:plan/3`, `wolong:plan/2`, and parser-only
