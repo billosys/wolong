@@ -6,20 +6,31 @@ planning organ's process boundary in the composite-cognition architecture.
 Sibling project: `chengdu` (builds/releases the pandaPI binaries wolong
 consumes).
 
-- Planning artifacts live under `docs/design-v0.1.0/…`, per the
-  collaboration framework's `PROJECT-MANAGEMENT.md` (canonical layout;
-  confirmed by operator 2026-08-05). Do not invent parallel structures.
-- Load the `collaboration-framework` skill at session start; load the
-  `erlang-guidelines` skill whenever writing or reviewing code (OTP design,
-  supervision, typespecs, ltest/eunit, Common Test). Code is LFE targeting
-  rebar3.
+- Planning artifacts live on the dedicated `planning` branch/worktree, not on
+  the implementation branch. Use `git worktree list` to locate it. If it is not
+  present locally, inspect or create the canonical `.worktrees/planning`
+  checkout only after confirming that the repository does not already have a
+  different worktree convention. Do not recreate planning docs on `main`.
+- Use the current `collaboration-framework` skill at session start. For
+  planning work, read `PROJECT-MANAGEMENT.md` as the wayfinder and then load
+  the relevant `docs/pm/` files. The current canonical layout is
+  `projectNN-<slug>/project-plan.md`, project `ledger.md`,
+  `arcNN-<slug>/arc-plan.md`, arc `ledger.md`, and per-slice
+  `slice-plan.md`, `ledger.md`, `cc-prompt.md`, `closing-report.md`, and
+  `cdc-verification.md`. Older `docs/design-v0.1.0/.../slice-doc.md` paths are
+  historical unless the active planning branch explicitly says otherwise.
+- Load the `erlang-guidelines` skill whenever writing or reviewing code (OTP
+  design, supervision, typespecs, ltest/eunit, Common Test). Code is LFE
+  targeting rebar3.
 - For LFE syntax/style decisions, read
   `/Users/oubiwann/lab/lfe/lfe-manual/src/part7/ai-resources/style-guide.md`
   before writing or reviewing LFE. Prefer its style guidance plus the existing
   local idioms over guessed Lisp/Erlang syntax.
-- Read `docs/design-v0.1.0/project-plan.md` first. The API contract that
-  must never erode: **validated-plan-or-unsolvable as an actual return
-  type** — no unverified plan crosses the API, and the current Chengdu
+- Before implementation or slice/arc closure, read the active
+  `project-plan.md` from the `planning` worktree first, then the relevant
+  `arc-plan.md`, slice `slice-plan.md`, and ledger files. The API contract that
+  must never erode: **validated-plan-or-unsolvable as an actual return type** —
+  no unverified plan crosses the API, and the current Chengdu
   `status=domain_no_plan` / exit `2` engine outcome is a success-shaped domain
   result, not a generic error. Older runbook wording about
   `Status: Proven unsolvable` / exit `0` is historical context only.

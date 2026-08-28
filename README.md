@@ -46,8 +46,12 @@ The older design sketch that continued past search into conversion and
 verification gates is historical context rather than the current implemented
 surface.
 
-See [`docs/design-v0.1.0/project-plan.md`](docs/design-v0.1.0/project-plan.md)
-for the full definition of done, non-goals, and arc roadmap.
+Project planning lives off the implementation branch in the dedicated
+`planning` branch/worktree. In a local development checkout, use
+`git worktree list` to locate the planning worktree before reading or updating
+project, arc, slice, ledger, closing-report, or CDC verification artifacts.
+Those planning files are intentionally kept separate from the runtime and
+public-facing documentation on `main`.
 
 ## Status
 
