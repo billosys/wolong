@@ -35,8 +35,8 @@ moved that blocker, Slice02 added Wolong runner support for stdin bytes plus
 EOF, Slice03 wired Wolong's internal parser -> grounder -> engine pipeline
 through the supported stdio artifact path, and Slice04 now proves that same
 path at Wolong's public API boundary with real local Chengdu binaries. Slice05
-is open to harden the remaining stdout/stderr backpressure, truncation, final
-status preservation, and timeout-cleanup risks before Arc03 close.
+hardens stdout/stderr backpressure, truncation, final status preservation, and
+timeout-cleanup risks with fixture-backed public-boundary stress coverage.
 
 ## 2. Slice breakdown
 
@@ -104,11 +104,15 @@ streaming/spooling redesign inside this slice.
   bytes, EOF delivery, separated stdout/stderr capture, output caps, nonzero
   completed exits, timeout cleanup, and recovery. `wolong-exec:run/3` remains
   the no-stdin compatibility API.
-- **OQ4 - active in Slice05:** Slice02 proves bounded capture and concurrent
-  stdout/stderr draining for fixture-scale stdin runs. Slice03 additionally
-  rejects truncated stdout artifacts as typed `artifact-truncated` gate
-  errors. Slice05 now owns larger artifact/backpressure stress, noisy stderr
-  before final status, and timeout cleanup while pipes are active.
+- **OQ4 - resolved by Slice05:** Slice02 proves bounded capture and concurrent
+  stdout/stderr draining for fixture-scale stdin runs. Slice03 rejects
+  truncated stdout artifacts as typed `artifact-truncated` gate errors.
+  Slice05 adds optional per-gate `output-limits`, independent stdout/stderr
+  bounds with `output-limit-bytes` fallback, bounded stderr-tail final-status
+  preservation, large parser/grounder/engine stdout success cases, typed
+  over-limit stdout rejection, flood-then-timeout cleanup, no-survivor proof,
+  and post-failure recovery. No streaming/spooling remediation slice is needed
+  from the tested stress evidence.
 - **OQ5 - resolved by slice01:** CI should continue using strict
   Wolong-owned fixtures. Real Chengdu binary probes remain optional local
   evidence until release artifacts are available to CI; remote CI must not
@@ -134,6 +138,17 @@ streaming/spooling redesign inside this slice.
 
 ## 6. Version history
 
+- **v1.9 - 2026-08-28 (surfaced by slice05 close).** Slice05 lands the
+  backpressure/timeout hardening layer in `b34f6bc`: `wolong-exec` keeps
+  `output-limit-bytes` compatibility while accepting optional per-stream
+  limits; `wolong-config` validates optional app-env `output-limits`;
+  `wolong-gate` derives per-gate stdout/stderr runner options and classifies
+  completed processes from bounded stderr preview or bounded stderr tail; and
+  fixture-backed CT proves large parser, grounder, and engine stdout artifacts,
+  typed stdout truncation, noisy-stderr final-status preservation, missing
+  status, flood-then-timeout process-group cleanup, and recovery. Arc03 is
+  ready for CDC verification and arc-level close if accepted; Arc04 still owns
+  release binary provisioning and provenance.
 - **v1.8 - 2026-08-28 (surfaced by slice05 opening).** Slice05 is opened as
   the remaining Arc03 hardening slice. It targets larger stdout artifacts,
   noisy stderr before final `PANDAPI_STATUS`, independently bounded

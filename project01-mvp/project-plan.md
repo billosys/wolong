@@ -140,10 +140,13 @@ consumer side of chengdu's provenance manifest.
   repairing relative real-binary env path resolution in commit `d2fbcdd`, and
   reproduced the proof against local Chengdu `release/0.3.x` / `7066f63c`.
   Remote CI remains fixture-backed and may skip real-binary cases when Chengdu
-  binaries are absent. Slice05 is open for release-scale stdout/stderr,
-  final-status preservation, truncation, and timeout/backpressure stress;
-  Arc04 still owns clean-machine release provisioning and checksum/provenance
-  composition.
+  binaries are absent. Slice05 now hardens release-scale stdout/stderr policy:
+  optional per-gate `output-limits`, independent stdout/stderr bounds,
+  bounded stderr-tail final-status preservation, large parser/grounder/engine
+  stdout success cases, typed stdout truncation, flood-then-timeout
+  process-group cleanup, and post-failure recovery. Arc03 is ready for CDC
+  verification and arc-level close if accepted; Arc04 still owns clean-machine
+  release provisioning and checksum/provenance composition.
 - **arc04 — named only.** Depends on arc03 and Chengdu release artifacts.
   Sequencing risk recorded: if Chengdu releases lag after stdio behavior is
   proven, arc04 falls back to documented-manual binary placement, and the fetch
@@ -164,6 +167,18 @@ project's `closing-report.md`. Strength vocabulary per `LEDGER-DISCIPLINE.md`.
 
 ## 5. Version history
 
+- **v1.14 - 2026-08-28 (surfaced by arc03 slice05 close).** Slice05 lands
+  backpressure-timeout hardening in `b34f6bc`. Wolong preserves
+  `wolong-exec` `output-limit-bytes` compatibility while allowing optional
+  per-stream stdout/stderr limits, validates optional app-env
+  `output-limits`, keeps stderr diagnostics bounded while preserving final
+  `PANDAPI_STATUS` in bounded tail, rejects truncated stdout artifacts as
+  typed gate errors, and proves large parser/grounder/engine stdout, noisy
+  stderr, missing status, flood timeout/no-survivor, and recovery through
+  fixture-backed public-boundary CT. Local real-Chengdu public proof still
+  passes when sibling binaries are available. No streaming/spooling
+  remediation slice is indicated before Arc03 close; Arc04 remains responsible
+  for released binary acquisition, checksums, provenance, and Hex readiness.
 - **v1.13 - 2026-08-28 (surfaced by arc03 slice05 opening).** Slice05 opens
   as the remaining Arc03 hardening slice before close readiness. It targets
   larger stdout artifacts, noisy stderr before final `PANDAPI_STATUS`,
